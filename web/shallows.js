@@ -13,6 +13,7 @@ const TAU = Math.PI * 2, STEP = 1 / 60; // one world step per 60 Hz frame; rippl
 const canvas = document.getElementById('lagoon');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const params = new URLSearchParams(location.search);
+const capture = params.has('capture'); // video capture: no real-time loop; a recorder advances exact frames
 
 let renderer;
 try {
@@ -194,9 +195,9 @@ addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(rebuild, 30
 })();
 
 function drawImagined() {
-  if (!ui.imagining()) { if (ovOn) { octx.setTransform(1, 0, 0, 1, 0, 0); octx.clearRect(0, 0, ov.width, ov.height); ovOn = false; } return; }
+  if (!ui.imagining() && !window.__showImagined) { if (ovOn) { octx.setTransform(1, 0, 0, 1, 0, 0); octx.clearRect(0, 0, ov.width, ov.height); ovOn = false; } return; }
   ovOn = true; octx.setTransform(dpr, 0, 0, dpr, 0, 0); octx.clearRect(0, 0, ov.width / dpr, ov.height / dpr);
-  const now = performance.now();
+  const now = capture ? E.t * 1000 : performance.now(); // a recording fades the trails on lagoon time
   for (const sp of RAYS) {
     const st = tr.S[sp]; if (!st.tries || !st.rank || !count(E, sp)) continue;
     if (!born[sp] || born[sp].gen !== st.recGen) born[sp] = { gen: st.recGen, t: now };
@@ -206,8 +207,9 @@ function drawImagined() {
       const q = st.rank[k] + .5, o = k * pts * 2; // q: 0 = worst practice swim, 1 = best
       octx.beginPath();
       for (let i = 0; i < pts; i++) { const x = st.tries[o + 2 * i] * unit, y = (E.H - st.tries[o + 2 * i + 1]) * unit; i ? octx.lineTo(x, y) : octx.moveTo(x, y); }
-      octx.strokeStyle = q > .5 ? `rgba(255,255,255,${(.14 + .6 * (q - .5) * 2) * fade})` : `rgba(245,200,181,${.16 * fade})`;
-      octx.lineWidth = q > .95 ? 2.2 : 1.1; octx.stroke();
+      const boost = window.__imagBoost || 1; // the video recorder draws the same trails a little stronger
+      octx.strokeStyle = q > .5 ? `rgba(255,255,255,${Math.min(1, (.14 + .6 * (q - .5) * 2) * fade * boost)})` : `rgba(245,200,181,${Math.min(1, .16 * fade * boost)})`;
+      octx.lineWidth = (q > .95 ? 2.2 : 1.1) * Math.sqrt(boost); octx.stroke();
     }
   }
 }
@@ -219,7 +221,7 @@ function step(dt) { stepWorld(E, tr.thetas(), dt); stepFish(fish, E, dt); if (dt
 function settle() { if (!paused) return; for (let i = 0; i < 75; i++) step(1 / 30); E.events.length = 0; dirty = 1; }
 if (reduced) { for (let i = 0; i < 120; i++) step(1 / 30); ui.toast('Motion is reduced, so the lagoon is still. Press Play to let it move.'); }
 function frame(now) {
-  requestAnimationFrame(frame);
+  if (!capture) requestAnimationFrame(frame);
   if (now < due - 1) return;                      // pace to about 60 fps on fast screens, full rate on 60-75 Hz
   due = Math.max(due + 1000 / 60, now);
   if (paused && !dirty) { last = now; ui.update(); return; } // a still lagoon is drawn only when something changes
@@ -244,11 +246,13 @@ function frame(now) {
   ui.update();
   if (rafCount === 1) document.getElementById('fallback').style.display = 'none'; window.__shallowsReady = true;
 }
-requestAnimationFrame(frame);
+if (!capture) requestAnimationFrame(frame);
 
 // ---- hooks for tests and the curious ----
 window.__shallows = {
   get E() { return E; }, get tr() { return tr; }, get rafCount() { return rafCount; }, renderer, api, AB,
   state: () => api.state(), report: () => tr.report(), setSea: s => api.setSea(s),
+  capStep: dt => { last = performance.now() - dt * 1000; due = 0; frame(performance.now()); tr.tick(E.t, 25); abTick(25); }, // capture only
+  bloomAt: (x, y) => { scareFish(fish, x, y, 1); if (userBloom(E, x, y)) addDrop(E, x, y, 2.4, .05); },
   info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, ...creatures.info() }),
 };

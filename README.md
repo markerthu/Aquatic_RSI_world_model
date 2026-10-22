@@ -6,6 +6,12 @@ forage at once by practising in a copy of their world, while you watch and chang
 
 The code in `web/` is the same code the site serves. There is no build step and no server-side part.
 
+[![Ocean Shallows: imagined practice swims drawn over the lagoon](media/poster.jpg)](media/ocean_shallows_promo.mp4)
+
+A 42 s film recorded from the real simulation ([`media/ocean_shallows_promo.mp4`](media/ocean_shallows_promo.mp4)):
+the white loops are one generation's imagined practice swims in the world model, and the badge is the live
+learned-vs-untrained check.
+
 ## The world
 
 - **Creatures.** Manta rays and eagle rays swim in deeper water, stingrays keep to the sandy shallows (and
@@ -78,6 +84,17 @@ node tests/learning.mjs 7 5    # lagoon seed 7, a tap every 5 s; prints learned 
 node tests/entering.mjs        # every ray added from the toolbar must swim into the lagoon
 ```
 
+## Record the film
+
+```bash
+cd web && python3 -m http.server 8000      # in another terminal
+python3 tools/record_video.py out/         # needs Chrome, ffmpeg and `pip install websocket-client`
+```
+
+The page opened with `?capture` stops its own real-time loop, and the script steps the lagoon by exact frames
+and screenshots each one, so the film is smooth on any machine. It warms up for 60 s of lagoon time (the rays
+learn from zero during it), then films 42 s; captions, title and end cards are plain DOM on top of the page.
+
 ## Files
 
 | file | what it holds |
@@ -90,3 +107,4 @@ node tests/entering.mjs        # every ray added from the toolbar must swim into
 | `web/ui.js` | toolbar, census, learning panel, hints, keyboard |
 | `web/fish.js` | schools of fish: the boids rules, foraging, fleeing, and their instanced drawing |
 | `web/sound.js` | optional surf, rain, notes and per-species touch sounds |
+| `tools/record_video.py` | records the film from the live simulation (see above) |
