@@ -123,6 +123,7 @@
   .trend svg{display:block;width:100%;height:78px;background:rgba(191,216,236,.18);border-radius:10px}
   .trend figcaption{font-size:11.5px;color:var(--muted);margin-top:5px}
   .imag{display:flex;align-items:center;gap:5px;cursor:pointer}
+  .fbtn{display:flex;gap:8px;margin-left:auto}
   .foot button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font:600 12px var(--sans);color:var(--ink);cursor:pointer}
   #imagine{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
   .tag{position:fixed;z-index:5;transform:translate(-50%,-150%) scale(.92);opacity:0;pointer-events:none;font:600 12.5px var(--sans);color:var(--ink);
@@ -217,8 +218,8 @@
   <p><b>Learning to learn.</b> Each species also tunes how boldly it practises: bolder while successive lessons agree, gentler when they conflict. Nothing is pre-trained: reload and they start from zero. The faint lines on the water are the imagined swims; the bright ones scored best.</p>
   <div class="rows" id="rows"></div>
   <figure class="trend" aria-labelledby="trendcap"><svg id="trend" viewBox="0 0 320 78" role="img" aria-label="Plankton of the learned habit divided by an untrained habit, over generations"></svg>
-    <figcaption id="trendcap">Learned vs untrained over generations (same water, same starts; 1 = no better)</figcaption></figure>
-  <div class="foot"><span id="gen">generation 0</span><label class="imag"><input type="checkbox" id="imag" checked> Show imagined swims</label><button type="button" id="restart">Start over</button><button type="button" id="pclose">Close</button></div>
+    <figcaption id="trendcap">Learned vs untrained over generations, each point pooled over the last three checks (same water, same starts; 1 = no better)</figcaption></figure>
+  <div class="foot"><span id="gen">generation 0</span><label class="imag"><input type="checkbox" id="imag" checked> Show imagined swims</label><span class="fbtn"><button type="button" id="restart">Start over</button><button type="button" id="pclose">Close</button></span></div>
 </section>
 
 <div class="show"><button type="button" id="showui">Show controls</button></div>

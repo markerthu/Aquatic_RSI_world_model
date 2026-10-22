@@ -133,6 +133,9 @@ export function createUI(api) {
     i.classList.toggle('neg', f < 0); i.style.left = (f >= 0 ? 50 : 50 + f * 50) + '%'; i.style.width = Math.abs(f) * 50 + '%';
     m.setAttribute('aria-valuenow', v.toFixed(2)); m.setAttribute('aria-valuemin', '-4'); m.setAttribute('aria-valuemax', '4');
   };
+  // learned vs untrained, pooled over a species' last three checks (about a minute): the lagoon changes between checks,
+  // and pooling steadies the number far more than longer checks would
+  const last3 = h => { const w = (h || []).slice(-3), a = w.reduce((x, p) => x + p[2], 0), b = w.reduce((x, p) => x + p[3], 0); return a > 0 ? { a, b, r: b / a, n: w.length } : null; };
   let lastRows = 0;
   function renderRows(force) {
     const now = performance.now(); if (!force && now - lastRows < 400) return; lastRows = now;
@@ -140,32 +143,42 @@ export function createUI(api) {
     for (const k of ['manta', 'eagle', 'sting']) {
       const th = s.thetas[k]; setMeter(R[k].m1, th[0]); setMeter(R[k].m2, -th[2]);
       R[k].sg.textContent = `explores ±${(s.sig[k] || 0).toFixed(2)}`;
-      const ab = s.ab[k], okAB = ab && isFinite(ab.ratio);
-      const state = okAB ? `×${ab.ratio.toFixed(2)}` : !s.counts[k] ? 'not in the water' : ab ? 'too little plankton'
+      const ab = s.ab[k], p = s.counts[k] ? last3(s.abh[k]) : null, okAB = !!p;
+      const state = okAB ? `×${p.r.toFixed(2)}` : !s.counts[k] ? 'not in the water' : ab ? 'too little plankton'
         : s.gen < 15 ? 'after a few generations' : s.paused ? 'paused' : 'measuring…';
       R[k].gv.textContent = state; R[k].g.classList.toggle('num', !!okAB);
-      R[k].g.title = okAB ? `In the same water and from the same starts, the learned habit ate ${ab.ratio.toFixed(2)}× the plankton of an untrained ray (${ab.n} paired swims, checked ${Math.max(0, Math.round(s.t - ab.t))} s ago).`
+      R[k].g.title = okAB ? `Over its last ${p.n === 1 ? 'check' : p.n + ' checks'} (${ab.n} paired swims each, every 20 s), in the same water and from the same starts, the learned habit ate ${p.r.toFixed(2)}× the plankton of an untrained ray. Latest check ${Math.max(0, Math.round(s.t - ab.t))} s ago.`
         : !s.counts[k] ? 'Add one to train and compare it.' : ab ? 'Too little plankton near this species to compare. Tap the water to scatter some.' : '';
     }
     drawTrend(s.abh);
     const rays = s.counts.manta + s.counts.eagle + s.counts.sting;
     $('gen').textContent = `generation ${s.gen}` + (!rays ? ' · paused: no rays in the water' : s.paused ? ' · paused while the lagoon is still' : '');
   }
-  // learned vs untrained over generations: one line per ray species, the dashed line is 'no better'
+  // learned vs untrained over generations: one line per ray species on a ratio (log) scale, so ×2 sits as far above
+  // the dashed 'no better' line as ×0.5 sits below it, and one lucky early check cannot flatten the rest
   const TREND_C = { manta: '#2F4B8F', eagle: '#6F94C6', sting: '#E39A7A' }, trend = $('trend');
   function drawTrend(h) {
-    let g1 = 6, lo = .8, hi = 1.6;
-    for (const k in h) for (const [g, r] of h[k]) { g1 = Math.max(g1, g); lo = Math.min(lo, r); hi = Math.max(hi, r); }
-    const W = Math.max(200, Math.round(trend.clientWidth || 320)), H = 78, px = g => 26 + (W - 40) * g / g1, py = r => H - 8 - (H - 16) * (r - lo) / (hi - lo);
+    const P = {}; // each point pooled over that check and the two before it, as in the rows and the badge
+    for (const k in h) P[k] = h[k].map((q, i) => [q[0], Math.log2(Math.max(.25, last3(h[k].slice(0, i + 1)).r))]);
+    let g1 = 6, lo = Math.log2(.8), hi = 1;
+    for (const k in P) for (const [g, y] of P[k]) { g1 = Math.max(g1, g); lo = Math.min(lo, y); hi = Math.max(hi, y); }
+    hi = Math.min(hi, 2); // above ×4 a point is drawn at the top edge
+    const W = Math.max(200, Math.round(trend.clientWidth || 320)), H = 78, px = g => 26 + (W - 40) * g / g1;
+    const py = y => H - 8 - (H - 16) * (Math.min(y, hi) - lo) / (hi - lo);
     trend.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    let svg = `<line x1="8" x2="${W - 8}" y1="${py(1).toFixed(1)}" y2="${py(1).toFixed(1)}" stroke="#8F97A8" stroke-dasharray="3 3" stroke-width="1"/>`;
-    svg += `<text x="10" y="${(py(1) - 4).toFixed(1)}" font-size="10" fill="#8F97A8">×1</text>`;
-    for (const k in h) {
-      const pts = h[k]; if (!pts.length) continue;
-      const d = pts.map(([g, r], i) => `${i ? 'L' : 'M'}${px(g).toFixed(1)},${py(r).toFixed(1)}`).join('');
-      const [gl, rl] = pts[pts.length - 1];
-      svg += `<path d="${d}" fill="none" stroke="${TREND_C[k]}" stroke-width="1.8"/>`
-        + `<circle cx="${px(gl).toFixed(1)}" cy="${py(rl).toFixed(1)}" r="2.6" fill="${TREND_C[k]}"/>`;
+    let svg = '';
+    for (const [y, lab] of [[0, '×1'], [1, '×2'], [2, '×4']]) {
+      if (y > hi + 1e-9) continue;
+      const yy = py(y).toFixed(1);
+      svg += `<line x1="8" x2="${W - 8}" y1="${yy}" y2="${yy}" stroke="#8F97A8" stroke-width="1"${y ? ' stroke-opacity=".35"' : ' stroke-dasharray="3 3"'}/>`
+        + `<text x="10" y="${(+yy - 4 < 10 ? +yy + 11 : +yy - 4).toFixed(1)}" font-size="10" fill="#8F97A8">${lab}</text>`; // label under a line at the top edge
+    }
+    for (const k in P) {
+      const pts = P[k]; if (!pts.length) continue;
+      const d = pts.map(([g, y], i) => `${i ? 'L' : 'M'}${px(g).toFixed(1)},${py(y).toFixed(1)}`).join('');
+      const [gl, yl] = pts[pts.length - 1];
+      svg += `<path d="${d}" fill="none" stroke="${TREND_C[k]}" stroke-width="1.8" stroke-linejoin="round"/>`
+        + `<circle cx="${px(gl).toFixed(1)}" cy="${py(yl).toFixed(1)}" r="2.6" fill="${TREND_C[k]}"/>`;
     }
     trend.innerHTML = svg;
   }
@@ -181,9 +194,9 @@ export function createUI(api) {
     if (txt !== lastCensus) { $('census').innerHTML = txt; lastCensus = txt; } // only counts and fixed words reach it
     for (const [k] of SEA) seaBtn[k].setAttribute('aria-pressed', s.sea === k ? 'true' : 'false');
     setPlayBtn(s.paused);
-    const ok = ['manta', 'eagle', 'sting'].filter(k => s.counts[k] && s.ab[k] && isFinite(s.ab[k].ratio)); // the latest check of each ray species in the water, as in the rows
-    const pooled = ok.length ? ok.reduce((x, k) => x + s.ab[k].b, 0) / ok.reduce((x, k) => x + s.ab[k].a, 0) : 0; // all paired swims pooled: always between the row values
-    const evo = (s.paused ? 'Paused' : 'Self-improving') + ` · ${innerWidth <= 430 ? 'gen' : 'generation'} ${s.gen}` + (ok.length ? ` · ×${pooled.toFixed(2)} vs untrained` : '');
+    const ps = ['manta', 'eagle', 'sting'].map(k => s.counts[k] ? last3(s.abh[k]) : null).filter(Boolean), ok = ps; // each ray species in the water, as in the rows
+    const pooled = ps.length ? ps.reduce((x, p) => x + p.b, 0) / ps.reduce((x, p) => x + p.a, 0) : 0; // all their paired swims pooled: always between the row values
+    const evo = (s.paused || !rays ? 'Paused' : 'Self-improving') + ` · ${innerWidth <= 430 ? 'gen' : 'generation'} ${s.gen}` + (ok.length ? ` · ×${pooled.toFixed(2)} vs untrained` : '');
     if (evo !== lastEvo) { $('evotxt').textContent = evo; lastEvo = evo; }
     if (panel.classList.contains('open')) renderRows(false);
   }
@@ -214,7 +227,7 @@ export function createUI(api) {
     requestAnimationFrame(() => el.classList.add('on')); setTimeout(() => el.classList.remove('on'), 1100); setTimeout(() => el.remove(), 1600);
   };
   $('evo').addEventListener('click', () => { setPanel(true, true); api.touched(); });
-  $('evo').title = 'Plankton eaten by the learned habit ÷ an untrained one, pooled over the latest check of every ray species (same water, same starts)';
+  $('evo').title = 'Plankton eaten by the learned habit ÷ an untrained one, pooled over the last three checks of every ray species (same water, same starts)';
   // first visit: a short card that says what this is
   const intro = $('intro'), seen = (() => { try { return localStorage.getItem('shallows-intro') === '1'; } catch (_) { return false; } })();
   const behind = on => { $('main').inert = barEl.inert = on; };

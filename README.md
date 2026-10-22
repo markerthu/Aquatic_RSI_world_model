@@ -55,8 +55,11 @@ pre-trained: every page load starts from zero.
 
 **Checked, not assumed.** The page keeps measuring the learned habit against an untrained one: both swim the
 same copied lagoon from the same starts with the same noise, and the learning panel shows the plankton ratio.
-The first check runs at generation 15 (about 22 s of lagoon time), then every 20 s; the badge at the top pools
-the latest check of every ray species in the water, the same numbers the panel's rows show.
+The first check runs at generation 15 (about 22 s of lagoon time), then every 20 s. The lagoon changes between
+checks, so the badge at the top pools each ray species' last three checks (about a minute of checks), the same
+numbers the panel's rows and chart show. In a replay of the page over 24 lagoons (`tests/badge_noise.mjs`) this cut
+the mean check-to-check change of the number from 0.35 to 0.12, while tripling the swims per check only took it to
+0.31.
 `tests/learning.mjs` runs the same kind of comparison offline, in a lagoon without the fish (60 swims of 24 s
 per species instead of the page's 12 pairs of 18 s). Over 9 lagoons (seeds 1, 2, 3, 4, 5, 7, 11, 21 and 42),
 with a tap every 5 s and without, and all three ray species (54 cases), the learned habit ate 1.06 to 2.31
@@ -90,6 +93,7 @@ node tests/learning.mjs 7 5          # lagoon seed 7, a tap every 5 s; prints le
 node tests/learning.mjs 7 5 fixed    # the same with a fixed exploration size
 node tests/entering.mjs              # every ray added from the toolbar is in the lagoon within 8 s (it swims in,
                                      # or an 8 s fallback places it in open water; placedByFallback counts those)
+node --import ./tests/no_three.mjs tests/badge_noise.mjs   # how steady the live check is (about 2 min)
 ```
 
 ## Record the film

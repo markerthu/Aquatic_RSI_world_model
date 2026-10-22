@@ -95,7 +95,7 @@ function* abRun() {
       }
     }
     AB[sp] = { ratio: a > .05 ? b / a : NaN, a, b, n: N, t: E.t };
-    if (a > .05) { ABH[sp].push([tr.gen, b / a]); if (ABH[sp].length > 40) ABH[sp].shift(); }
+    if (a > .05) { ABH[sp].push([tr.gen, b / a, a, b]); if (ABH[sp].length > 40) ABH[sp].shift(); }
     yield;
   }
 }

@@ -74,10 +74,11 @@ export function createTrainer(E, o = {}) {
   const maskOf = sp => (tr.mask && !Array.isArray(tr.mask) ? tr.mask[sp] : tr.mask);
   function* generation() {
     const F = forkEnv(E), food0 = Float32Array.from(F.food), t0 = F.t;
+    let trained = 0;
     for (const sp of RAYS) {
       const st = S[sp], mem = E.rays.filter(r => r.sp === sp && !r.leaving && !r.entering);
       if (!mem.length) { st.paused = true; continue; }
-      st.paused = false;
+      st.paused = false; trained++;
       if (st.sig == null) st.sig = tr.sigma;
       const sig = tr.adapt ? st.sig : tr.sigma;
       const NPk = tr.np, mk = maskOf(sp), ray = makeRay(F, sp, 0, 0, 0), eps = [], R = new Float64Array(2 * NPk), I = new Float64Array(2 * NPk);
@@ -134,7 +135,7 @@ export function createTrainer(E, o = {}) {
       if (rec) { st.tries = rec; st.rank = u; st.recGen = tr.gen; } // the imagined swims of this generation, for drawing
       yield;
     }
-    tr.gen++;
+    if (trained) tr.gen++; // a generation counts only when some ray species practised
   }
   // Run the generator inside a millisecond budget. Returns true when a generation finished.
   tr.tick = (tsec, budget = tr.budget) => {
