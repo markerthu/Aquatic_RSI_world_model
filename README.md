@@ -6,9 +6,9 @@ forage at once by practising in a copy of their world, while you watch and chang
 
 The code in `web/` is the same code the site serves. There is no build step and no server-side part.
 
-[![Ocean Shallows: imagined practice swims drawn over the lagoon](media/poster.jpg)](media/ocean_shallows_promo.mp4)
+[![Ocean Shallows: imagined practice swims drawn over the lagoon](media/preview.gif)](media/ocean_shallows_promo.mp4)
 
-A 42 s film recorded from the real simulation ([`media/ocean_shallows_promo.mp4`](media/ocean_shallows_promo.mp4)):
+An 8 s loop from a 42 s film recorded from the real simulation (click it, or open [`media/ocean_shallows_promo.mp4`](media/ocean_shallows_promo.mp4)):
 the white loops are one generation's imagined practice swims in the world model, and the badge is the live
 learned-vs-untrained check.
 
