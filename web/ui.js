@@ -37,8 +37,9 @@ export function createUI(api) {
   SPECIES_ORDER.forEach((k, i) => {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'sp'; b.dataset.sp = k;
-    b.setAttribute('aria-label', `Add a ${NAMES[k][0].toLowerCase()} (key ${i + 1}; hold or Shift+${i + 1} removes one)`);
-    b.title = `Tap to add a ${NAMES[k][0].toLowerCase()}, drag one onto the water, or hold to remove one`;
+    const an = k === 'eagle' ? 'an' : 'a';
+    b.setAttribute('aria-label', `Add ${an} ${NAMES[k][0].toLowerCase()} (key ${i + 1}; hold or Shift+${i + 1} removes one)`);
+    b.title = `Tap to add ${an} ${NAMES[k][0].toLowerCase()}, drag one onto the water, or hold to remove one`;
     b.innerHTML = `${ICON[k]}<span class="nm">${NAMES[k][0]}</span><span class="ct" aria-hidden="true">0</span>`;
     b.addEventListener('click', e => { if (dragged) { dragged = false; return; } e.shiftKey ? api.remove(k) : api.add(k); api.touched(); });
     // drag the icon onto the water to place one exactly there

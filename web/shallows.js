@@ -115,7 +115,7 @@ const api = {
     const d = depthAt(E, x, y), P = SPECIES[sp];
     if (d < .3) return { ok: false, x, y, why: 'That is dry sand — drop it in the water.' };
     if (P.maxD && d > P.maxD) return { ok: false, x, y, why: `Too deep for a ${ui.NAMES[sp][0].toLowerCase()}: they keep to the sandy shallows.` };
-    if (d < P.minD) return { ok: false, x, y, why: `Too shallow for a ${ui.NAMES[sp][0].toLowerCase()}: drop it in deeper water.` };
+    if (d < P.minD) return { ok: false, x, y, why: `Too shallow for ${sp === 'eagle' ? 'an' : 'a'} ${ui.NAMES[sp][0].toLowerCase()}: drop it in deeper water.` };
     return { ok: true, x, y };
   },
   canDrop(sp, cx, cy) { return api.dropCheck(sp, cx, cy).ok; },
