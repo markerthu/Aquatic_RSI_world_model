@@ -66,7 +66,7 @@ export function shoreS(E, x, y) {
     const bandH = (H - R.b) + 1.25 + .6 * sstep(.55 * W, .95 * W, x);
     s = (H - y) - bandH + warp;
   }
-  return smin(s, sdBox(x, y, R) - 1.3, .6);
+  return smin(s, sdBox(x, y, R) - 1.3 + warp, .6); // the sand under the title card gets the same irregular edge
 }
 function depthFrom(E, s, x, y) {
   if (s <= 0) return -.25 * sstep(0, 1.6, -s);

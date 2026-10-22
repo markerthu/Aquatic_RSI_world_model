@@ -76,20 +76,20 @@
   /* learning panel */
   .panel{position:fixed;left:50%;bottom:calc(var(--barh,72px) + 26px);transform:translateX(-50%);z-index:4;width:min(560px,calc(100vw - 20px));
     background:rgba(251,250,247,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:16px;
-    padding:16px 18px 14px;box-shadow:0 18px 50px rgba(10,40,60,.22);display:none;max-height:calc(100vh - 180px);max-height:calc(100dvh - 180px);overflow:auto}
+    padding:16px 18px 14px;box-shadow:0 18px 50px rgba(10,40,60,.22);display:none;max-height:calc(100vh - var(--barh,72px) - var(--headb,72px) - 80px);max-height:calc(100dvh - var(--barh,72px) - var(--headb,72px) - 80px);overflow:auto}
   .panel.open{display:block}
   .evo{position:fixed;left:max(16px,env(safe-area-inset-left));top:calc(var(--headb,72px) + 8px);z-index:3;display:flex;align-items:center;gap:8px;
     appearance:none;border:1px solid var(--line);background:var(--paper);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:999px;
-    padding:6px 12px 6px 10px;font:600 12.5px var(--sans);color:var(--navy);cursor:pointer;box-shadow:0 6px 18px rgba(16,40,60,.10);font-variant-numeric:tabular-nums}
+    padding:6px 12px 6px 10px;font:600 12.5px var(--sans);color:var(--navy);cursor:pointer;box-shadow:0 6px 18px rgba(16,40,60,.10);font-variant-numeric:tabular-nums;max-width:calc(100vw - 32px)}
   .evo:hover{background:var(--paper-solid)}
   .evo:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
   .evo-dot{width:8px;height:8px;border-radius:50%;background:#3E7D5A;box-shadow:0 0 0 0 rgba(62,125,90,.5);animation:evoPulse 2.4s ease-out infinite}
   @keyframes evoPulse{0%{box-shadow:0 0 0 0 rgba(62,125,90,.5)}70%{box-shadow:0 0 0 8px rgba(62,125,90,0)}100%{box-shadow:0 0 0 0 rgba(62,125,90,0)}}
   @media (prefers-reduced-motion: reduce){.evo-dot{animation:none}}
-  .intro{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(8,30,44,.38);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+  .intro{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;background:rgba(8,30,44,.38);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
   .intro[hidden]{display:none}
-  .intro-card{max-width:520px;background:rgba(251,250,247,.96);border-radius:20px;padding:26px 28px 22px;box-shadow:0 30px 80px rgba(6,30,44,.35);border:1px solid var(--line)}
-  .intro-k{margin:0 0 6px;font:600 12px var(--sans);color:#3E7D5A;letter-spacing:.02em}
+  .intro-card{margin:auto;max-width:520px;background:rgba(251,250,247,.96);border-radius:20px;padding:26px 28px 22px;box-shadow:0 30px 80px rgba(6,30,44,.35);border:1px solid var(--line)}
+  .intro-k{margin:0 0 6px;font:600 12px var(--sans);color:var(--navy);letter-spacing:.02em}
   .intro h2{font-family:var(--serif);font-weight:500;font-size:30px;line-height:1.1;margin:0 0 10px;color:var(--navy)}
   .intro-lead{margin:0 0 14px;font-size:15px;line-height:1.55;color:var(--ink)}
   .intro-pts{margin:0 0 18px;padding:0;list-style:none;display:grid;gap:8px}
@@ -129,7 +129,7 @@
     background:var(--paper-solid);border:1px solid var(--line);border-radius:999px;padding:4px 10px;box-shadow:0 6px 18px rgba(10,40,60,.18);
     transition:opacity .25s,transform .25s;white-space:nowrap}
   .tag.on{opacity:1;transform:translate(-50%,-180%) scale(1)}
-  .toast{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:5;font-size:13px;background:rgba(16,33,43,.78);color:#fff;
+  .toast{position:fixed;left:50%;top:calc(var(--headb,64px) + 52px);transform:translateX(-50%);z-index:5;font-size:13px;width:max-content;max-width:calc(100vw - 32px);text-align:center;background:rgba(16,33,43,.78);color:#fff;
     padding:7px 13px;border-radius:999px;opacity:0;transition:opacity .4s;pointer-events:none}
   .toast.on{opacity:1}
   .fallback{position:fixed;inset:0;z-index:6;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:24px;
@@ -137,7 +137,8 @@
   .fallback p{background:rgba(16,33,43,.6);padding:12px 16px;border-radius:12px;max-width:420px;line-height:1.5}
   @media (max-width:520px){ .loop{grid-template-columns:1fr 1fr} }
   @media (max-width:860px){
-    .head{left:10px;top:10px;padding:7px 11px;gap:9px}
+    .head{left:10px;top:10px;padding:7px 11px;gap:9px;max-width:calc(100vw - 20px)}
+    .evo{left:max(10px,env(safe-area-inset-left))}
     .title{font-size:18px}
     .bar{bottom:10px;border-radius:16px;padding:4px;flex-wrap:wrap;justify-content:center;row-gap:2px;width:calc(100vw - 20px)}
     .bar #species{flex-basis:100%;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:2px}
@@ -151,16 +152,16 @@
     .sp svg{width:30px;height:24px}
     .hint{font-size:12px;white-space:normal;text-align:center;width:max-content;max-width:calc(100vw - 30px)}
     .panel{padding:14px}
-    .toast{top:calc(var(--headb,64px) + 10px);max-width:calc(100vw - 32px);text-align:center}
     .rows{grid-template-columns:auto 1fr 1fr;}
     .rows .gain{grid-column:1 / -1;justify-self:end;margin-top:-4px}
     .rows .hg{display:none}
     .gain.num .gl{display:inline}
   }
   .nm .sh{display:none}
-  @media (max-width:430px){ .nm .lg{display:none} .nm .sh{display:inline} .ctl{padding:4px 3px} }
+  @media (max-width:430px){ .nm .lg{display:none} .nm .sh{display:inline} .ctl{padding:4px 3px} .census .sea{display:none} .back{white-space:nowrap} }
   @media (max-height:520px) and (min-width:640px){ .bar{flex-wrap:nowrap;width:auto;max-width:calc(100vw - 20px)} .bar #species{flex-basis:auto;border-bottom:0;padding-bottom:0} .bar .div:first-of-type{display:block} .sp{flex:0 0 auto;min-width:54px;min-height:50px} .ctl{min-height:50px} }
-  @media (max-height:520px){ .hint{display:none} .head{top:max(8px,env(safe-area-inset-top))} .panel{bottom:auto;top:8px;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)} }
+  @media (max-height:520px){ .hint{display:none} .head{top:max(8px,env(safe-area-inset-top))} .panel{top:8px;bottom:calc(var(--barh,72px) + 6px);max-height:none}
+    .intro{padding:10px} .intro-card{padding:16px 24px 14px} .intro h2{font-size:25px;margin-bottom:6px} .intro-lead{font-size:14px;margin-bottom:8px} .intro-pts{gap:5px;margin-bottom:12px} .intro-pts li{font-size:13px;line-height:1.4} .intro-go{padding:9px 20px} .intro-hint{margin-top:8px} }
   @media (prefers-reduced-transparency: reduce){ .head,.bar,.panel,.hint{background:var(--paper-solid);backdrop-filter:none;-webkit-backdrop-filter:none} }
 </style>
 </head>
@@ -178,7 +179,7 @@
 </header>
 
 <button type="button" class="evo ui" id="evo" aria-controls="panel"><span class="evo-dot" aria-hidden="true"></span><span id="evotxt">Self-improving · generation 0</span></button>
-<div class="hint ui" id="hint" role="note">Tap the water to scatter plankton · tap a creature to startle it, drag it to lead it · tap or drag a species to add one, hold one to remove it</div>
+<div class="hint ui" id="hint" role="note">Tap the water to feed them · tap a creature to startle it · tap a species to add one, hold to remove</div>
 </main>
 
 <nav class="bar ui" aria-label="Lagoon controls">
@@ -191,16 +192,16 @@
 
 <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="introt" hidden>
   <div class="intro-card">
-    <p class="intro-k">A living world model</p>
+    <p class="intro-k">Multi-agent self-improvement</p>
     <h2 id="introt">Agents that teach themselves</h2>
-    <p class="intro-lead">A small lagoon where many animals share the same water, and the rays get better at living in it while you watch.</p>
+    <p class="intro-lead">A small lagoon where the rays get better at living in it while you&nbsp;watch.</p>
     <ol class="intro-pts">
-      <li><b>Many agents.</b> Mantas, eagle rays, stingrays, jellies and schools of fish compete for the same plankton.</li>
-      <li><b>A world model.</b> Every 1.5 seconds each ray species copies the lagoon and imagines 16 practice swims in the copy.</li>
+      <li><b>Many agents.</b> Mantas, eagle rays, stingrays and schools of fish compete for the same plankton; sea nettles sting.</li>
+      <li><b>A world model.</b> Every 1.5&nbsp;seconds each ray species copies the lagoon and imagines 16 practice swims in the copy: the faint lines on the water.</li>
       <li><b>Self-improvement.</b> It keeps what worked, and also learns how boldly to practise. Nothing is pre-trained.</li>
     </ol>
     <button type="button" class="intro-go" id="introgo">Dive in</button>
-    <p class="intro-hint">Tap the water to feed them · open Learning to watch them improve</p>
+    <p class="intro-hint"><b>Checked live.</b> Every 20&nbsp;s the learned habit is tested against an untrained one, in the same water from the same starts.</p>
   </div>
 </div>
 
@@ -211,13 +212,13 @@
     <li><b>Copy</b> the lagoon: a world model with the same water, plankton and nettles</li>
     <li><b>Imagine</b> 16 practice swims per species, each with a slightly changed habit</li>
     <li><b>Keep</b> what ate more plankton and took fewer stings</li>
-    <li><b>Act</b> with the new habit, and repeat every 1.5 s as the lagoon changes</li>
+    <li><b>Act</b> with the new habit, and repeat every 1.5&nbsp;s as the lagoon changes</li>
   </ol>
   <p><b>Learning to learn.</b> Each species also tunes how boldly it practises: bolder while successive lessons agree, gentler when they conflict. Nothing is pre-trained: reload and they start from zero. The faint lines on the water are the imagined swims; the bright ones scored best.</p>
   <div class="rows" id="rows"></div>
   <figure class="trend" aria-labelledby="trendcap"><svg id="trend" viewBox="0 0 320 78" role="img" aria-label="Plankton of the learned habit divided by an untrained habit, over generations"></svg>
     <figcaption id="trendcap">Learned vs untrained over generations (same water, same starts; 1 = no better)</figcaption></figure>
-  <div class="foot"><span id="gen">generation 0</span><label class="imag"><input type="checkbox" id="imag" checked> Show imagined swims</label><button type="button" id="restart">Start over</button></div>
+  <div class="foot"><span id="gen">generation 0</span><label class="imag"><input type="checkbox" id="imag" checked> Show imagined swims</label><button type="button" id="restart">Start over</button><button type="button" id="pclose">Close</button></div>
 </section>
 
 <div class="show"><button type="button" id="showui">Show controls</button></div>

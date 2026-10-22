@@ -27,16 +27,18 @@ learned-vs-untrained check.
 
 Each generation is one loop, and it runs about every 1.5 s of lagoon time:
 
-1. **Copy** the lagoon. The copy is an exact world model: the same water, plankton and nettles.
+1. **Copy** the lagoon. The copy starts exactly as the lagoon is now (the same water, plankton and nettles) and
+   is a simplified world model: each practice swim is one ray alone, the plankton neither drifts nor regrows,
+   and the nettles coast on with the water.
 2. **Imagine** 16 practice swims per ray species in the copy, each with a slightly changed habit.
 3. **Keep** the changes that ate more plankton and took fewer stings.
    Each species also **learns how to learn**: its exploration size grows while successive gradient estimates
-   agree and shrinks when they conflict. Over the 30 test cases this keeps the mean gain of a fixed size
-   (1.47x vs 1.48x over untrained) and leaves no case without a gain (worst 1.07x vs 1.00x).
+   agree and shrinks when they conflict. In the 54 test cases below this left no case without a gain (worst
+   1.06x over untrained, vs 1.00x for a fixed size), with a similar mean gain (1.41x vs 1.38x).
 4. **Act** with the new habit in the real lagoon, which keeps changing as you tap and switch the weather.
 
-With the learning panel open, the page draws each generation's imagined swims on the water (brighter = scored
-better) and charts learned vs untrained over generations.
+The page draws each generation's imagined swims on the water as faint white lines (brighter = scored better;
+switch them off in the learning panel), and the panel charts learned vs untrained over generations.
 
 ## How the rays learn (details)
 
@@ -53,9 +55,13 @@ pre-trained: every page load starts from zero.
 
 **Checked, not assumed.** The page keeps measuring the learned habit against an untrained one: both swim the
 same copied lagoon from the same starts with the same noise, and the learning panel shows the plankton ratio.
-`tests/learning.mjs` runs the same comparison offline. Over 5 lagoons, with and without taps, and all three
-ray species (30 cases), the learned habit ate 1.02 to 1.97 times as much plankton as the untrained one after
-60 generations.
+The first check runs at generation 15 (about 22 s of lagoon time), then every 20 s; the badge at the top pools
+the latest check of every ray species in the water, the same numbers the panel's rows show.
+`tests/learning.mjs` runs the same kind of comparison offline, in a lagoon without the fish (60 swims of 24 s
+per species instead of the page's 12 pairs of 18 s). Over 9 lagoons (seeds 1, 2, 3, 4, 5, 7, 11, 21 and 42),
+with a tap every 5 s and without, and all three ray species (54 cases), the learned habit ate 1.06 to 2.31
+times as much plankton as the untrained one after 60 generations (mean 1.41). With the exploration size held
+fixed (`fixed`), the range was 1.00 to 3.36 (mean 1.38), with one case no better than untrained (1.002x).
 
 ## Things you can do
 
@@ -80,8 +86,10 @@ frame budget allows. Three.js 0.160.0 is loaded from jsDelivr, so the first load
 ## Tests
 
 ```bash
-node tests/learning.mjs 7 5    # lagoon seed 7, a tap every 5 s; prints learned vs untrained plankton per species
-node tests/entering.mjs        # every ray added from the toolbar must swim into the lagoon
+node tests/learning.mjs 7 5          # lagoon seed 7, a tap every 5 s; prints learned vs untrained plankton per species
+node tests/learning.mjs 7 5 fixed    # the same with a fixed exploration size
+node tests/entering.mjs              # every ray added from the toolbar is in the lagoon within 8 s (it swims in,
+                                     # or an 8 s fallback places it in open water; placedByFallback counts those)
 ```
 
 ## Record the film

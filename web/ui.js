@@ -106,12 +106,14 @@ export function createUI(api) {
   };
   optBtn.learn.addEventListener('click', () => { setPanel(!panel.classList.contains('open'), true); api.touched(); });
   const setHidden = on => {
+    if (on) setPanel(false);
     document.body.classList.toggle('ui-hidden', on); optBtn.hide.setAttribute('aria-pressed', on ? 'true' : 'false'); api.uiHidden(on);
     (on ? $('showui') : optBtn.hide).focus({ preventScroll: true });
   };
   optBtn.hide.addEventListener('click', () => { setHidden(true); api.touched(); });
   $('showui').addEventListener('click', () => setHidden(false));
   $('restart').addEventListener('click', () => { api.startOver(); renderRows(true); });
+  $('pclose').addEventListener('click', () => setPanel(false, true));
 
   // learning rows
   const rows = $('rows');
@@ -140,7 +142,7 @@ export function createUI(api) {
       R[k].sg.textContent = `explores ±${(s.sig[k] || 0).toFixed(2)}`;
       const ab = s.ab[k], okAB = ab && isFinite(ab.ratio);
       const state = okAB ? `×${ab.ratio.toFixed(2)}` : !s.counts[k] ? 'not in the water' : ab ? 'too little plankton'
-        : s.gen < 6 ? 'after a few generations' : s.paused ? 'paused' : 'measuring…';
+        : s.gen < 15 ? 'after a few generations' : s.paused ? 'paused' : 'measuring…';
       R[k].gv.textContent = state; R[k].g.classList.toggle('num', !!okAB);
       R[k].g.title = okAB ? `In the same water and from the same starts, the learned habit ate ${ab.ratio.toFixed(2)}× the plankton of an untrained ray (${ab.n} paired swims, checked ${Math.max(0, Math.round(s.t - ab.t))} s ago).`
         : !s.counts[k] ? 'Add one to train and compare it.' : ab ? 'Too little plankton near this species to compare. Tap the water to scatter some.' : '';
@@ -169,28 +171,30 @@ export function createUI(api) {
   }
   for (const k of ['manta', 'eagle', 'sting']) R[k].who.style.boxShadow = `inset 3px 0 0 ${TREND_C[k]}`;
   const imag = $('imag'); imag.addEventListener('change', () => api.redraw());
-  const imagining = () => panel.classList.contains('open') && imag.checked;
+  const imagining = () => imag.checked; // drawn on the water by default; the panel's checkbox turns them off
   let lastCensus = '', lastEvo = '';
   function update() {
     const s = api.state();
     for (const k of SPECIES_ORDER) ctBadge[k].textContent = s.counts[k];
     const rays = s.counts.manta + s.counts.eagle + s.counts.sting, jel = s.counts.moon + s.counts.nettle;
-    const txt = `${rays} ${rays === 1 ? 'ray' : 'rays'} · ${jel} ${jel === 1 ? 'jelly' : 'jellies'} · ${s.fish} fish · ${s.seaLine}`;
-    if (txt !== lastCensus) { $('census').textContent = txt; lastCensus = txt; }
+    const txt = `${rays} ${rays === 1 ? 'ray' : 'rays'} · ${jel} ${jel === 1 ? 'jelly' : 'jellies'} · ${s.fish} fish<span class="sea"> · ${s.seaLine}</span>`;
+    if (txt !== lastCensus) { $('census').innerHTML = txt; lastCensus = txt; } // only counts and fixed words reach it
     for (const [k] of SEA) seaBtn[k].setAttribute('aria-pressed', s.sea === k ? 'true' : 'false');
     setPlayBtn(s.paused);
-    const rs = ['manta', 'eagle', 'sting'].map(k => { const h = (s.abh[k] || []).slice(-3); return h.length && s.counts[k] ? h.reduce((a, p) => a + p[1], 0) / h.length : null; }).filter(v => v != null); // last three checks per species
-    const evo = (s.paused ? 'Paused' : 'Self-improving') + ` · generation ${s.gen}` + (rs.length ? ` · ×${(rs.reduce((a, b) => a + b, 0) / rs.length).toFixed(2)} vs untrained` : '');
+    const ok = ['manta', 'eagle', 'sting'].filter(k => s.counts[k] && s.ab[k] && isFinite(s.ab[k].ratio)); // the latest check of each ray species in the water, as in the rows
+    const pooled = ok.length ? ok.reduce((x, k) => x + s.ab[k].b, 0) / ok.reduce((x, k) => x + s.ab[k].a, 0) : 0; // all paired swims pooled: always between the row values
+    const evo = (s.paused ? 'Paused' : 'Self-improving') + ` · ${innerWidth <= 430 ? 'gen' : 'generation'} ${s.gen}` + (ok.length ? ` · ×${pooled.toFixed(2)} vs untrained` : '');
     if (evo !== lastEvo) { $('evotxt').textContent = evo; lastEvo = evo; }
     if (panel.classList.contains('open')) renderRows(false);
   }
   let hintGone = false;
   const hideHint = () => { if (!hintGone) { hintGone = true; $('hint').classList.add('gone'); } };
-  let toastT = 0;
-  const toast = msg => { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2200); };
+  let toastT = 0, pendingToast = null;
+  const toast = msg => { if (!$('intro').hidden) { pendingToast = msg; return; } const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2200); };
   // keyboard
   addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!$('intro').hidden) return; // the intro card handles its own keys
     const k = e.key.toLowerCase(), tag = e.target && e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     const dm = /^(Digit|Numpad)([1-5])$/.exec(e.code || '');
@@ -210,10 +214,15 @@ export function createUI(api) {
     requestAnimationFrame(() => el.classList.add('on')); setTimeout(() => el.classList.remove('on'), 1100); setTimeout(() => el.remove(), 1600);
   };
   $('evo').addEventListener('click', () => { setPanel(true, true); api.touched(); });
+  $('evo').title = 'Plankton eaten by the learned habit ÷ an untrained one, pooled over the latest check of every ray species (same water, same starts)';
   // first visit: a short card that says what this is
   const intro = $('intro'), seen = (() => { try { return localStorage.getItem('shallows-intro') === '1'; } catch (_) { return false; } })();
-  const closeIntro = () => { intro.hidden = true; try { localStorage.setItem('shallows-intro', '1'); } catch (_) {} };
-  if (!seen && !/[?&]nointro/.test(location.search)) { intro.hidden = false; setTimeout(() => $('introgo').focus({ preventScroll: true }), 50); }
+  const behind = on => { $('main').inert = barEl.inert = on; };
+  const closeIntro = () => {
+    intro.hidden = true; behind(false); try { localStorage.setItem('shallows-intro', '1'); } catch (_) {}
+    if (pendingToast) { const m = pendingToast; pendingToast = null; toast(m); }
+  };
+  if (!seen && !/[?&]nointro/.test(location.search)) { intro.hidden = false; behind(true); setTimeout(() => $('introgo').focus({ preventScroll: true }), 50); }
   $('introgo').addEventListener('click', closeIntro);
   intro.addEventListener('click', e => { if (e.target === intro) closeIntro(); });
   addEventListener('keydown', e => { if (e.key === 'Escape' && !intro.hidden) closeIntro(); });

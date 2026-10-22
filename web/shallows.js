@@ -94,13 +94,13 @@ function* abRun() {
         if (which) b += out[1]; else a += out[1];
       }
     }
-    AB[sp] = { ratio: a > .05 ? b / a : NaN, n: N, t: E.t };
+    AB[sp] = { ratio: a > .05 ? b / a : NaN, a, b, n: N, t: E.t };
     if (a > .05) { ABH[sp].push([tr.gen, b / a]); if (ABH[sp].length > 40) ABH[sp].shift(); }
     yield;
   }
 }
 function abTick(budget) {
-  if (!abIt) { if (tr.gen < 6 || E.t - abLast < 20) return; abIt = abRun(); abLast = E.t; }
+  if (!abIt) { if (tr.gen < 15 || E.t - abLast < 20) return; abIt = abRun(); abLast = E.t; } // first check after 15 generations (~22 s), then every 20 s
   const t0 = performance.now();
   while (performance.now() - t0 < budget) { if (abIt.next().done) { abIt = null; break; } }
 }
@@ -219,7 +219,7 @@ let last = performance.now(), acc = 0, due = 0, rafCount = 0, paused = reduced, 
 function step(dt) { stepWorld(E, tr.thetas(), dt); stepFish(fish, E, dt); if (dt > STEP * 1.5 || (++stepN & 1)) stepRipples(E); }
 // While the lagoon is still, a change is stepped in silently (2.5 s of lagoon time) and drawn once, with no animation.
 function settle() { if (!paused) return; for (let i = 0; i < 75; i++) step(1 / 30); E.events.length = 0; dirty = 1; }
-if (reduced) { for (let i = 0; i < 120; i++) step(1 / 30); ui.toast('Motion is reduced, so the lagoon is still. Press Play to let it move.'); }
+if (reduced) { for (let i = 0; i < 120; i++) step(1 / 30); ui.toast('Motion is reduced, so the lagoon is still. Press Play to let it move.'); } // shown once the intro card is closed
 function frame(now) {
   if (!capture) requestAnimationFrame(frame);
   if (now < due - 1) return;                      // pace to about 60 fps on fast screens, full rate on 60-75 Hz
