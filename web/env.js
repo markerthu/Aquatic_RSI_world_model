@@ -247,7 +247,7 @@ export function blurScent(E) {
   boxPass(E.food, E.blurTmp, nx, ny, rr, true); boxPass(E.blurTmp, E.scent, nx, ny, rr, false);
   boxPass(E.scent, E.blurTmp, nx, ny, rr, true); boxPass(E.blurTmp, E.scent, nx, ny, rr, false);
 }
-function eatAt(E, x, y, f) {
+export function eatAt(E, x, y, f) {
   const i0 = Math.round(x * E.fix - .5), j0 = Math.round(y * E.fiy - .5), nx = E.fnx, ny = E.fny;
   for (let j = j0 - 1; j <= j0 + 1; j++) if (j >= 0 && j < ny) for (let i = i0 - 1; i <= i0 + 1; i++) if (i >= 0 && i < nx) E.food[j * nx + i] *= f;
 }

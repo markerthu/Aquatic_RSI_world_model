@@ -119,11 +119,12 @@ export function createUI(api) {
   const R = {};
   for (const k of ['manta', 'eagle', 'sting']) {
     const who = document.createElement('span'); who.className = 'who'; who.textContent = NAMES[k][0];
+    const sg = document.createElement('small'); who.appendChild(sg);
     const m1 = document.createElement('span'); m1.className = 'meter'; m1.innerHTML = '<i></i>'; m1.setAttribute('role', 'meter');
     const m2 = document.createElement('span'); m2.className = 'meter'; m2.innerHTML = '<i></i>'; m2.setAttribute('role', 'meter');
     m1.setAttribute('aria-label', `${NAMES[k][0]}: follow the scent`); m2.setAttribute('aria-label', `${NAMES[k][0]}: steer clear of nettles`);
     const g = document.createElement('span'); g.className = 'gain'; g.innerHTML = '<b>—</b><span class="gl"> plankton vs untrained</span>';
-    rows.append(who, m1, m2, g); R[k] = { who, m1, m2, g, gv: g.firstChild };
+    rows.append(who, m1, m2, g); R[k] = { who, sg, m1, m2, g, gv: g.firstChild };
   }
   const setMeter = (m, v) => { // weights live in [-4, 4]; the bar grows from the centre line
     const i = m.firstChild, f = Math.max(-1, Math.min(1, v / 4));
@@ -136,6 +137,7 @@ export function createUI(api) {
     const s = api.state();
     for (const k of ['manta', 'eagle', 'sting']) {
       const th = s.thetas[k]; setMeter(R[k].m1, th[0]); setMeter(R[k].m2, -th[2]);
+      R[k].sg.textContent = `explores ±${(s.sig[k] || 0).toFixed(2)}`;
       const ab = s.ab[k], okAB = ab && isFinite(ab.ratio);
       const state = okAB ? `×${ab.ratio.toFixed(2)}` : !s.counts[k] ? 'not in the water' : ab ? 'too little plankton'
         : s.gen < 6 ? 'after a few generations' : s.paused ? 'paused' : 'measuring…';
@@ -168,15 +170,18 @@ export function createUI(api) {
   for (const k of ['manta', 'eagle', 'sting']) R[k].who.style.boxShadow = `inset 3px 0 0 ${TREND_C[k]}`;
   const imag = $('imag'); imag.addEventListener('change', () => api.redraw());
   const imagining = () => panel.classList.contains('open') && imag.checked;
-  let lastCensus = '';
+  let lastCensus = '', lastEvo = '';
   function update() {
     const s = api.state();
     for (const k of SPECIES_ORDER) ctBadge[k].textContent = s.counts[k];
     const rays = s.counts.manta + s.counts.eagle + s.counts.sting, jel = s.counts.moon + s.counts.nettle;
-    const txt = `${rays} ${rays === 1 ? 'ray' : 'rays'} · ${jel} ${jel === 1 ? 'jelly' : 'jellies'} · ${s.seaLine}`;
+    const txt = `${rays} ${rays === 1 ? 'ray' : 'rays'} · ${jel} ${jel === 1 ? 'jelly' : 'jellies'} · ${s.fish} fish · ${s.seaLine}`;
     if (txt !== lastCensus) { $('census').textContent = txt; lastCensus = txt; }
     for (const [k] of SEA) seaBtn[k].setAttribute('aria-pressed', s.sea === k ? 'true' : 'false');
     setPlayBtn(s.paused);
+    const rs = ['manta', 'eagle', 'sting'].map(k => { const h = (s.abh[k] || []).slice(-3); return h.length && s.counts[k] ? h.reduce((a, p) => a + p[1], 0) / h.length : null; }).filter(v => v != null); // last three checks per species
+    const evo = (s.paused ? 'Paused' : 'Self-improving') + ` · generation ${s.gen}` + (rs.length ? ` · ×${(rs.reduce((a, b) => a + b, 0) / rs.length).toFixed(2)} vs untrained` : '');
+    if (evo !== lastEvo) { $('evotxt').textContent = evo; lastEvo = evo; }
     if (panel.classList.contains('open')) renderRows(false);
   }
   let hintGone = false;
@@ -204,6 +209,14 @@ export function createUI(api) {
     el.style.left = x + 'px'; el.style.top = y + 'px'; document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add('on')); setTimeout(() => el.classList.remove('on'), 1100); setTimeout(() => el.remove(), 1600);
   };
+  $('evo').addEventListener('click', () => { setPanel(true, true); api.touched(); });
+  // first visit: a short card that says what this is
+  const intro = $('intro'), seen = (() => { try { return localStorage.getItem('shallows-intro') === '1'; } catch (_) { return false; } })();
+  const closeIntro = () => { intro.hidden = true; try { localStorage.setItem('shallows-intro', '1'); } catch (_) {} };
+  if (!seen && !/[?&]nointro/.test(location.search)) { intro.hidden = false; setTimeout(() => $('introgo').focus({ preventScroll: true }), 50); }
+  $('introgo').addEventListener('click', closeIntro);
+  intro.addEventListener('click', e => { if (e.target === intro) closeIntro(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !intro.hidden) closeIntro(); });
   measure();
   return { update, hideHint, toast, tag, imagining, NAMES };
 }

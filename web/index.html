@@ -78,6 +78,27 @@
     background:rgba(251,250,247,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:16px;
     padding:16px 18px 14px;box-shadow:0 18px 50px rgba(10,40,60,.22);display:none;max-height:calc(100vh - 180px);max-height:calc(100dvh - 180px);overflow:auto}
   .panel.open{display:block}
+  .evo{position:fixed;left:max(16px,env(safe-area-inset-left));top:calc(var(--headb,72px) + 8px);z-index:3;display:flex;align-items:center;gap:8px;
+    appearance:none;border:1px solid var(--line);background:var(--paper);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:999px;
+    padding:6px 12px 6px 10px;font:600 12.5px var(--sans);color:var(--navy);cursor:pointer;box-shadow:0 6px 18px rgba(16,40,60,.10);font-variant-numeric:tabular-nums}
+  .evo:hover{background:var(--paper-solid)}
+  .evo:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+  .evo-dot{width:8px;height:8px;border-radius:50%;background:#3E7D5A;box-shadow:0 0 0 0 rgba(62,125,90,.5);animation:evoPulse 2.4s ease-out infinite}
+  @keyframes evoPulse{0%{box-shadow:0 0 0 0 rgba(62,125,90,.5)}70%{box-shadow:0 0 0 8px rgba(62,125,90,0)}100%{box-shadow:0 0 0 0 rgba(62,125,90,0)}}
+  @media (prefers-reduced-motion: reduce){.evo-dot{animation:none}}
+  .intro{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(8,30,44,.38);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+  .intro[hidden]{display:none}
+  .intro-card{max-width:520px;background:rgba(251,250,247,.96);border-radius:20px;padding:26px 28px 22px;box-shadow:0 30px 80px rgba(6,30,44,.35);border:1px solid var(--line)}
+  .intro-k{margin:0 0 6px;font:600 12px var(--sans);color:#3E7D5A;letter-spacing:.02em}
+  .intro h2{font-family:var(--serif);font-weight:500;font-size:30px;line-height:1.1;margin:0 0 10px;color:var(--navy)}
+  .intro-lead{margin:0 0 14px;font-size:15px;line-height:1.55;color:var(--ink)}
+  .intro-pts{margin:0 0 18px;padding:0;list-style:none;display:grid;gap:8px}
+  .intro-pts li{font-size:13.5px;line-height:1.5;color:var(--muted);padding-left:14px;border-left:3px solid var(--misty)}
+  .intro-pts b{color:var(--ink)}
+  .intro-go{appearance:none;border:0;background:var(--navy);color:#fff;font:600 15px var(--sans);padding:11px 22px;border-radius:999px;cursor:pointer}
+  .intro-go:focus-visible{outline:2px solid var(--navy);outline-offset:3px}
+  .intro-hint{margin:12px 0 0;font-size:12px;color:var(--muted)}
+  .rows .who small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
   .panel h2:focus{outline:none}
   .panel h2{font-family:var(--serif);font-weight:500;font-size:20px;margin:0 0 4px;color:var(--navy)}
   .panel p{font-size:13px;line-height:1.5;color:var(--muted);margin:0 0 12px}
@@ -156,6 +177,7 @@
   </div>
 </header>
 
+<button type="button" class="evo ui" id="evo" aria-controls="panel"><span class="evo-dot" aria-hidden="true"></span><span id="evotxt">Self-improving · generation 0</span></button>
 <div class="hint ui" id="hint" role="note">Tap the water to scatter plankton · tap a creature to startle it, drag it to lead it · tap or drag a species to add one, hold one to remove it</div>
 </main>
 
@@ -167,6 +189,21 @@
   <div class="grp" role="group" aria-label="Options" id="opts"></div>
 </nav>
 
+<div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="introt" hidden>
+  <div class="intro-card">
+    <p class="intro-k">A living world model</p>
+    <h2 id="introt">Agents that teach themselves</h2>
+    <p class="intro-lead">A small lagoon where many animals share the same water, and the rays get better at living in it while you watch.</p>
+    <ol class="intro-pts">
+      <li><b>Many agents.</b> Mantas, eagle rays, stingrays, jellies and schools of fish compete for the same plankton.</li>
+      <li><b>A world model.</b> Every 1.5 seconds each ray species copies the lagoon and imagines 16 practice swims in the copy.</li>
+      <li><b>Self-improvement.</b> It keeps what worked, and also learns how boldly to practise. Nothing is pre-trained.</li>
+    </ol>
+    <button type="button" class="intro-go" id="introgo">Dive in</button>
+    <p class="intro-hint">Tap the water to feed them · open Learning to watch them improve</p>
+  </div>
+</div>
+
 <section class="panel" id="panel" aria-labelledby="ptitle" role="dialog">
   <h2 id="ptitle" tabindex="-1">How the rays improve themselves</h2>
   <p class="lede">Many rays, one shared habit per species, all learning at once while they compete for the same plankton.</p>
@@ -176,7 +213,7 @@
     <li><b>Keep</b> what ate more plankton and took fewer stings</li>
     <li><b>Act</b> with the new habit, and repeat every 1.5 s as the lagoon changes</li>
   </ol>
-  <p>Nothing is pre-trained: reload and they start from zero. The faint lines on the water are the imagined swims; the bright ones scored best.</p>
+  <p><b>Learning to learn.</b> Each species also tunes how boldly it practises: bolder while successive lessons agree, gentler when they conflict. Nothing is pre-trained: reload and they start from zero. The faint lines on the water are the imagined swims; the bright ones scored best.</p>
   <div class="rows" id="rows"></div>
   <figure class="trend" aria-labelledby="trendcap"><svg id="trend" viewBox="0 0 320 78" role="img" aria-label="Plankton of the learned habit divided by an untrained habit, over generations"></svg>
     <figcaption id="trendcap">Learned vs untrained over generations (same water, same starts; 1 = no better)</figcaption></figure>

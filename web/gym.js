@@ -61,22 +61,25 @@ export function createTrainer(E, o = {}) {
   const NP = 8, T = 12, dt = 1 / 20, steps = 240;
   const rng = mulberry32(((o.seed ?? 1) ^ 0x51ED27) >>> 0);
   const S = {};
-  const blank = () => ({ th: new Float64Array(12), m: new Float64Array(12), v: new Float64Array(12), at: 0, raw: [], ema: [], gens: [], tries: null, rank: null, paused: false });
+  const blank = () => ({ th: new Float64Array(12), m: new Float64Array(12), v: new Float64Array(12), at: 0, raw: [], ema: [], gens: [], tries: null, rank: null, paused: false,
+    sig: null, gPrev: null, sigs: [] }); // sig: this species' own exploration size, adapted from its learning history
   for (const sp of RAYS) S[sp] = blank();
   const now = () => (globalThis.performance ? performance.now() : Date.now());
   const tr = {
     gen: 0, S, ticks: [], paused: false, fast: !!o.fast, cadence: o.cadence ?? 1.5, budget: o.budget ?? 1.5,
-    sigma: o.sigma ?? .3, alpha: o.alpha ?? .1, it: null, last: -1e9, recSp: o.recSp || null, lastGenMs: 0, busyMs: 0,
+    sigma: o.sigma ?? .3, alpha: o.alpha ?? .1, adapt: o.adapt ?? true, it: null, last: -1e9, recSp: o.recSp || null, lastGenMs: 0, busyMs: 0,
     // learn two habits: follow the scent (w0), steer clear of nettles (w2); measured to beat the untrained habit
     mask: o.mask === undefined ? [0, 2] : o.mask, np: o.np || NP,
   };
   const maskOf = sp => (tr.mask && !Array.isArray(tr.mask) ? tr.mask[sp] : tr.mask);
   function* generation() {
-    const F = forkEnv(E), food0 = Float32Array.from(F.food), t0 = F.t, sig = tr.sigma;
+    const F = forkEnv(E), food0 = Float32Array.from(F.food), t0 = F.t;
     for (const sp of RAYS) {
       const st = S[sp], mem = E.rays.filter(r => r.sp === sp && !r.leaving && !r.entering);
       if (!mem.length) { st.paused = true; continue; }
       st.paused = false;
+      if (st.sig == null) st.sig = tr.sigma;
+      const sig = tr.adapt ? st.sig : tr.sigma;
       const NPk = tr.np, mk = maskOf(sp), ray = makeRay(F, sp, 0, 0, 0), eps = [], R = new Float64Array(2 * NPk), I = new Float64Array(2 * NPk);
       const rec = (tr.recSp === sp || tr.recSp === 'all') ? new Float32Array(2 * NPk * 120) : null, thp = new Float64Array(12), out = [0, 0];
       for (let i = 0; i < NPk; i++) {
@@ -105,6 +108,15 @@ export function createTrainer(E, o = {}) {
       idx.forEach((k, n) => { u[k] = n / (2 * NPk - 1) - .5; });
       const g = new Float64Array(12);
       for (let i = 0; i < NPk; i++) for (let k = 0; k < 12; k++) g[k] += (u[2 * i] - u[2 * i + 1]) * eps[i][k];
+      // learning to learn: when this generation's gradient estimate agrees with the last one, practise more boldly;
+      // when they conflict, more carefully (a self-adaptive step size)
+      if (tr.adapt) {
+        let dot = 0, a2 = 0, b2 = 0;
+        if (st.gPrev) for (let k = 0; k < 12; k++) { dot += g[k] * st.gPrev[k]; a2 += g[k] * g[k]; b2 += st.gPrev[k] * st.gPrev[k]; }
+        const cos = a2 > 0 && b2 > 0 ? dot / Math.sqrt(a2 * b2) : 0;
+        st.sig = clamp(st.sig * Math.exp(.1 * cos), .15, .5); // gentle: same mean gain as a fixed size, but no lagoon left without one st.gPrev = Float64Array.from(g);
+        st.sigs.push(st.sig); if (st.sigs.length > 120) st.sigs.shift();
+      }
       st.at++;
       const b1 = .9, b2 = .999, c1 = 1 - Math.pow(b1, st.at), c2 = 1 - Math.pow(b2, st.at);
       for (let k = 0; k < 12; k++) {

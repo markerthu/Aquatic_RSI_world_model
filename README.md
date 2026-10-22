@@ -9,7 +9,9 @@ The code in `web/` is the same code the site serves. There is no build step and 
 ## The world
 
 - **Creatures.** Manta rays and eagle rays swim in deeper water, stingrays keep to the sandy shallows (and
-  sometimes settle on the sand), moon jellies and sea nettles drift with the water.
+  sometimes settle on the sand), moon jellies and sea nettles drift with the water, and schools of small silver
+  fish (boids) school, follow the plankton scent, flee rays, nettles and your finger, and eat plankton, so fish and
+  rays compete for the same food.
 - **Food.** Plankton blooms appear on their own and wherever you tap. Each bloom spreads a scent field that a
   ray can sense on its left and right.
 - **Danger.** Sea nettles sting rays that swim into the zone behind their bells.
@@ -22,6 +24,9 @@ Each generation is one loop, and it runs about every 1.5 s of lagoon time:
 1. **Copy** the lagoon. The copy is an exact world model: the same water, plankton and nettles.
 2. **Imagine** 16 practice swims per ray species in the copy, each with a slightly changed habit.
 3. **Keep** the changes that ate more plankton and took fewer stings.
+   Each species also **learns how to learn**: its exploration size grows while successive gradient estimates
+   agree and shrinks when they conflict. Over the 30 test cases this keeps the mean gain of a fixed size
+   (1.47x vs 1.48x over untrained) and leaves no case without a gain (worst 1.07x vs 1.00x).
 4. **Act** with the new habit in the real lagoon, which keeps changing as you tap and switch the weather.
 
 With the learning panel open, the page draws each generation's imagined swims on the water (brighter = scored
@@ -83,4 +88,5 @@ node tests/entering.mjs        # every ray added from the toolbar must swim into
 | `web/water.js` | the water shader (sand, depth colour, caustics, ripples, rain, shadows) |
 | `web/creatures.js` | ray and jelly meshes and shaders, tails and tentacles, shadows, picking |
 | `web/ui.js` | toolbar, census, learning panel, hints, keyboard |
-| `web/sound.js` | optional surf, rain and notes |
+| `web/fish.js` | schools of fish: the boids rules, foraging, fleeing, and their instanced drawing |
+| `web/sound.js` | optional surf, rain, notes and per-species touch sounds |

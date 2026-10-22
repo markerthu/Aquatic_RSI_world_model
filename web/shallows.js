@@ -7,6 +7,7 @@ import { createTrainer, rollout } from './gym.js';
 import { createWater } from './water.js';
 import { createCreatures } from './creatures.js';
 import { createUI, SPECIES_ORDER } from './ui.js';
+import { createFish, stepFish, scareFish, createFishView } from './fish.js';
 
 const TAU = Math.PI * 2, STEP = 1 / 60; // one world step per 60 Hz frame; ripples keep their 30 Hz cadence
 const canvas = document.getElementById('lagoon');
@@ -28,7 +29,7 @@ let dpr = 1;
 const SEA_LINE = { calm: 'calm water · midday', rain: 'rain · overcast', current: 'current · ebb tide', whirl: 'whirlpool · midday' };
 const START = mobile ? { manta: 1, eagle: 2, sting: 1, moon: 2, nettle: 1 } : { manta: 2, eagle: 3, sting: 2, moon: 3, nettle: 2 };
 
-let E, tr, water, creatures, cam, shadowRT, unit = 1;
+let E, tr, water, creatures, cam, shadowRT, unit = 1, fish = null, fishView = null;
 const AB = {}, ABH = { manta: [], eagle: [], sting: [] }; // latest comparison, and its history
 let sound = null, lastTouch = -1e9, touched = false;
 
@@ -61,6 +62,9 @@ function build(keep) {
   water = createWater(E, renderer);
   if (creatures) creatures.dispose();
   creatures = createCreatures(E);
+  if (fishView) fishView.dispose();
+  fish = createFish(E, { schools: mobile ? 2 : 3, per: mobile ? 20 : 26 }); fishView = createFishView(fish);
+  creatures.scene.add(fishView.mesh); creatures.shadowScene.add(fishView.smesh);
   abIt = null; // a comparison in progress belongs to the old lagoon
   ov.width = Math.round(w * dpr); ov.height = Math.round(h * dpr); ovOn = true;
 }
@@ -130,7 +134,7 @@ const api = {
   touched() { if (!touched) { touched = true; ui.hideHint(); } lastTouch = performance.now(); },
   redraw() { dirty = 1; },
   togglePause() { paused = !paused; dirty = 1; ui.toast(paused ? 'Still. Learning waits until the lagoon moves again.' : 'Moving.'); },
-  state() { return { t: E.t, gen: tr.gen, counts: counts(), sea: E.sea, seaLine: SEA_LINE[E.sea], thetas: tr.thetas(), ab: AB, abh: ABH, paused }; },
+  state() { return { t: E.t, gen: tr.gen, counts: counts(), sea: E.sea, seaLine: SEA_LINE[E.sea], thetas: tr.thetas(), ab: AB, abh: ABH, paused, fish: fish.n, sig: Object.fromEntries(RAYS.map(sp => [sp, tr.S[sp].sig ?? tr.sigma])) }; },
 };
 const ui = createUI(api);
 api.toggleSound = (() => { let pending = null; return () => {
@@ -148,6 +152,7 @@ canvas.addEventListener('pointerdown', e => {
   const r = creatures.pick(x, y);
   if (r) { drag = r; dragId = e.pointerId; dragFrom = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false }; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} canvas.classList.add('grabbing'); return; }
   if (depthAt(E, x, y) < .3) { ui.toast('That is dry sand — tap the water.'); return; }
+  scareFish(fish, x, y, 1);
   if (userBloom(E, x, y)) { addDrop(E, x, y, 2.4, .05); dirty = 1; settle(); }
   else ui.toast('The plankton needs a moment to settle.');
 });
@@ -163,7 +168,7 @@ canvas.addEventListener('pointermove', e => {
   const dx = x - lastMove.x, dy = y - lastMove.y, dtm = (now - lastMove.t) / 1000;
   if (dtm > .05 && !reduced) {
     const v = Math.hypot(dx, dy) / dtm;
-    if (v > 1.2 && v < 40 && depthAt(E, x, y) > .2) { addDrop(E, x, y, 1.2, Math.min(.012, .0015 * v)); if (v > 6) addJet(E, x, y, dx / dtm * .15, dy / dtm * .15); }
+    if (v > 1.2 && v < 40 && depthAt(E, x, y) > .2) { addDrop(E, x, y, 1.2, Math.min(.012, .0015 * v)); if (v > 6) { addJet(E, x, y, dx / dtm * .15, dy / dtm * .15); scareFish(fish, x, y, .6); } }
     lastMove = { x, y, t: now };
   }
   canvas.classList.toggle('grab', !!creatures.pick(x, y));
@@ -172,7 +177,7 @@ function endDrag(e) {
   if (!drag || (e && e.pointerId !== dragId)) return;
   const r = drag; drag = null; dragId = null; canvas.classList.remove('grabbing');
   if (e && e.type === 'pointerup' && !dragFrom.moved) { // a tap: the creature reacts
-    const [x, y] = toWorld(e); poke(E, r, x, y); ui.tag(ui.NAMES[r.sp][0], e.clientX, e.clientY);
+    const [x, y] = toWorld(e); poke(E, r, x, y); scareFish(fish, x, y, .8); ui.tag(ui.NAMES[r.sp][0], e.clientX, e.clientY);
   }
   if (paused) settle(); // a still lagoon shows the result at once
   r.lead = null;
@@ -209,7 +214,7 @@ function drawImagined() {
 
 // ---- main loop ----
 let last = performance.now(), acc = 0, due = 0, rafCount = 0, paused = reduced, noteI = 0, dirty = 1, stepN = 0;
-function step(dt) { stepWorld(E, tr.thetas(), dt); if (dt > STEP * 1.5 || (++stepN & 1)) stepRipples(E); }
+function step(dt) { stepWorld(E, tr.thetas(), dt); stepFish(fish, E, dt); if (dt > STEP * 1.5 || (++stepN & 1)) stepRipples(E); }
 // While the lagoon is still, a change is stepped in silently (2.5 s of lagoon time) and drawn once, with no animation.
 function settle() { if (!paused) return; for (let i = 0; i < 75; i++) step(1 / 30); E.events.length = 0; dirty = 1; }
 if (reduced) { for (let i = 0; i < 120; i++) step(1 / 30); ui.toast('Motion is reduced, so the lagoon is still. Press Play to let it move.'); }
@@ -232,7 +237,7 @@ function frame(now) {
   renderer.info.reset();
   packRipples(E);
   water.update(E.t, paused ? 0 : dt, snap);
-  creatures.update(E.t);
+  creatures.update(E.t); fishView.update();
   renderer.setRenderTarget(shadowRT); renderer.setClearColor(0x000000, 1); renderer.clear(); renderer.render(creatures.shadowScene, cam);
   renderer.setRenderTarget(null); renderer.clear(); water.render(shadowRT); renderer.render(creatures.scene, cam);
   drawImagined();
