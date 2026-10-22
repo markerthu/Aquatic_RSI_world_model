@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ocean Shallows — a small gym | Jiajun Fan</title>
+<meta name="description" content="A live lagoon where rays learn to forage and jellies drift. Touch the water, change the weather, and watch them adapt.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0f5f7a">
+<meta property="og:title" content="Ocean Shallows — a small gym">
+<meta property="og:description" content="A live lagoon where rays learn to forage and jellies drift. Touch the water and watch them adapt.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.jiajunfan.com/lab/shallows/">
+<meta property="og:image" content="https://www.jiajunfan.com/lab/shallows/og.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A top-down sunlit lagoon with manta rays, eagle rays, stingrays and jellyfish">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/images/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
+<style>
+  :root{
+    --ink:#10212b; --paper:rgba(251,250,247,.82); --paper-solid:#FBFAF7; --line:rgba(16,33,43,.12);
+    --navy:#2F4B8F; --muted:#4C5468; --peach:#F5C8B5; --terra:#E39A7A; --misty:#BFD8EC;
+    --serif:'Newsreader', Georgia, serif; --sans:'Inter', system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0f5f7a;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  canvas#lagoon{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+  canvas#lagoon.grab{cursor:grab} canvas#lagoon.grabbing{cursor:grabbing}
+  .ui{transition:opacity .35s}
+  body.ui-hidden .ui{opacity:0;pointer-events:none;visibility:hidden;transition:opacity .35s,visibility 0s .35s}
+  a{color:inherit}
+  /* title chip, top-left on the sand */
+  .head{position:fixed;left:max(16px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));z-index:3;display:flex;align-items:center;gap:12px;
+    background:var(--paper);backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2);
+    border:1px solid var(--line);border-radius:12px;padding:8px 14px 8px 12px;box-shadow:0 6px 24px rgba(16,40,60,.12)}
+  .back{font-size:12.5px;font-weight:500;color:var(--muted);text-decoration:none;padding:4px 6px;border-radius:6px}
+  .back:hover{color:var(--navy);text-decoration:underline}
+  .head .sep{width:1px;height:26px;background:var(--line)}
+  .title{font-family:var(--serif);font-size:21px;line-height:1;letter-spacing:-.01em;color:var(--navy);margin:0;font-weight:500}
+  .title i{font-style:italic}
+  .census{font-size:12px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+  /* hint above the toolbar */
+  .hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--barh,72px) + 32px);z-index:3;font-size:13px;color:#0d2b38;
+    background:rgba(251,250,247,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:6px 12px;border-radius:999px;
+    white-space:normal;text-align:center;width:max-content;max-width:min(92vw,760px);transition:opacity .6s}
+  .hint.gone{opacity:0;pointer-events:none}
+  /* bottom toolbar */
+  .bar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:3;display:flex;align-items:stretch;gap:4px;
+    background:var(--paper);backdrop-filter:blur(14px) saturate(1.25);-webkit-backdrop-filter:blur(14px) saturate(1.25);
+    border:1px solid var(--line);border-radius:18px;padding:6px;box-shadow:0 10px 34px rgba(10,40,60,.18);max-width:calc(100vw - 20px)}
+  .bar .grp{display:flex;gap:2px;align-items:stretch}
+  .bar .div{width:1px;background:var(--line);margin:6px 4px}
+  .sp,.ctl{appearance:none;border:0;background:transparent;font:inherit;color:var(--ink);cursor:pointer;border-radius:12px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:64px;min-height:62px;padding:6px 8px;position:relative}
+  .sp:hover,.ctl:hover{background:rgba(47,75,143,.08)}
+  .sp:focus-visible,.ctl:focus-visible,.back:focus-visible,.panel button:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+  .sp svg{width:34px;height:28px}
+  .sp .nm,.ctl .nm{font-size:11px;font-weight:600;line-height:1.1;white-space:nowrap}
+  .sp .ct{position:absolute;top:4px;right:6px;font-size:10px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;
+    background:rgba(191,216,236,.7);border-radius:999px;padding:0 5px;min-width:16px;text-align:center}
+  .ctl{min-width:54px}
+  .ctl svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .ctl[aria-pressed="true"]{background:rgba(47,75,143,.12);color:var(--navy)}
+  .sp{touch-action:none}
+  .ghost{position:fixed;left:0;top:0;z-index:7;pointer-events:none;width:56px;height:46px;margin:-23px 0 0 -28px;
+    filter:drop-shadow(0 6px 10px rgba(10,40,60,.35));transition:opacity .15s}
+  .ghost svg{width:100%;height:100%}
+  .ghost.bad{opacity:.45}
+  .show{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));z-index:4;display:none}
+  body.ui-hidden .show{display:flex;opacity:1;pointer-events:auto}
+  .show button{appearance:none;border:1px solid var(--line);background:var(--paper);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border-radius:999px;padding:9px 14px;font:600 12.5px var(--sans);color:var(--ink);cursor:pointer}
+  /* learning panel */
+  .panel{position:fixed;left:50%;bottom:calc(var(--barh,72px) + 26px);transform:translateX(-50%);z-index:4;width:min(560px,calc(100vw - 20px));
+    background:rgba(251,250,247,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:16px;
+    padding:16px 18px 14px;box-shadow:0 18px 50px rgba(10,40,60,.22);display:none;max-height:calc(100vh - 180px);max-height:calc(100dvh - 180px);overflow:auto}
+  .panel.open{display:block}
+  .panel h2:focus{outline:none}
+  .panel h2{font-family:var(--serif);font-weight:500;font-size:20px;margin:0 0 4px;color:var(--navy)}
+  .panel p{font-size:13px;line-height:1.5;color:var(--muted);margin:0 0 12px}
+  .rows{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px 12px;align-items:center;font-size:12.5px}
+  .rows .h{font-size:11px;color:var(--muted);font-weight:600}
+  .rows .who{font-weight:600;white-space:nowrap}
+  .meter{height:8px;border-radius:99px;background:#E4E8EF;position:relative;overflow:hidden}
+  .meter i{position:absolute;left:50%;top:0;bottom:0;background:var(--navy);border-radius:99px}
+  .meter i.neg{background:var(--terra)}
+  .meter::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:rgba(16,33,43,.25)}
+  .gain{font-variant-numeric:tabular-nums;font-weight:600;color:var(--muted);white-space:nowrap}
+  .gain.num{color:var(--navy)}
+  .gain b{font-weight:inherit}
+  .gain .gl{display:none;font-weight:500;color:var(--muted)}
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--muted);gap:10px;flex-wrap:wrap}
+  .foot button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font:600 12px var(--sans);color:var(--ink);cursor:pointer}
+  .tag{position:fixed;z-index:5;transform:translate(-50%,-150%) scale(.92);opacity:0;pointer-events:none;font:600 12.5px var(--sans);color:var(--ink);
+    background:var(--paper-solid);border:1px solid var(--line);border-radius:999px;padding:4px 10px;box-shadow:0 6px 18px rgba(10,40,60,.18);
+    transition:opacity .25s,transform .25s;white-space:nowrap}
+  .tag.on{opacity:1;transform:translate(-50%,-180%) scale(1)}
+  .toast{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:5;font-size:13px;background:rgba(16,33,43,.78);color:#fff;
+    padding:7px 13px;border-radius:999px;opacity:0;transition:opacity .4s;pointer-events:none}
+  .toast.on{opacity:1}
+  .fallback{position:fixed;inset:0;z-index:6;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:24px;
+    background:#0f5f7a url(poster.jpg) center/cover no-repeat;color:#fff}
+  .fallback p{background:rgba(16,33,43,.6);padding:12px 16px;border-radius:12px;max-width:420px;line-height:1.5}
+  @media (max-width:860px){
+    .head{left:10px;top:10px;padding:7px 11px;gap:9px}
+    .title{font-size:18px}
+    .bar{bottom:10px;border-radius:16px;padding:4px;flex-wrap:wrap;justify-content:center;row-gap:2px;width:calc(100vw - 20px)}
+    .bar #species{flex-basis:100%;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:2px}
+    .bar .div:first-of-type{display:none}
+    .bar .div{margin:8px 2px}
+    .sp{min-width:0;flex:1;min-height:56px;padding:5px 2px}
+    .ctl{min-width:0;min-height:46px;padding:4px 5px;gap:2px}
+    .ctl .nm{font-size:10px}
+    .bar #seas,.bar #opts{flex:1 1 auto;justify-content:space-around}
+    .ctl svg{width:18px;height:18px}
+    .sp svg{width:30px;height:24px}
+    .hint{font-size:12px;white-space:normal;text-align:center;width:max-content;max-width:calc(100vw - 30px)}
+    .panel{padding:14px}
+    .toast{top:calc(var(--headb,64px) + 10px);max-width:calc(100vw - 32px);text-align:center}
+    .rows{grid-template-columns:auto 1fr 1fr;}
+    .rows .gain{grid-column:1 / -1;justify-self:end;margin-top:-4px}
+    .rows .hg{display:none}
+    .gain.num .gl{display:inline}
+  }
+  .nm .sh{display:none}
+  @media (max-width:430px){ .nm .lg{display:none} .nm .sh{display:inline} .ctl{padding:4px 3px} }
+  @media (max-height:520px) and (min-width:640px){ .bar{flex-wrap:nowrap;width:auto;max-width:calc(100vw - 20px)} .bar #species{flex-basis:auto;border-bottom:0;padding-bottom:0} .bar .div:first-of-type{display:block} .sp{flex:0 0 auto;min-width:54px;min-height:50px} .ctl{min-height:50px} }
+  @media (max-height:520px){ .hint{display:none} .head{top:max(8px,env(safe-area-inset-top))} .panel{bottom:auto;top:8px;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)} }
+  @media (prefers-reduced-transparency: reduce){ .head,.bar,.panel,.hint{background:var(--paper-solid);backdrop-filter:none;-webkit-backdrop-filter:none} }
+</style>
+</head>
+<body>
+<canvas id="lagoon" aria-label="A top-down view of a sunlit lagoon with rays and jellyfish. Tap the water to scatter plankton; tap a creature to startle it, or drag it to lead it." role="img"></canvas>
+
+<header class="head ui">
+  <a class="back" href="/">← jiajunfan.com</a>
+  <span class="sep" aria-hidden="true"></span>
+  <div>
+    <h1 class="title">Ocean <i>Shallows</i></h1>
+    <div class="census" id="census" aria-live="polite">—</div>
+  </div>
+</header>
+
+<div class="hint ui" id="hint">Tap the water to scatter plankton · tap a creature to startle it, drag it to lead it · tap or drag a species to add one, hold one to remove it</div>
+
+<nav class="bar ui" aria-label="Lagoon controls">
+  <div class="grp" id="species" role="group" aria-label="Add creatures"></div>
+  <span class="div" aria-hidden="true"></span>
+  <div class="grp" role="group" aria-label="Sea state" id="seas"></div>
+  <span class="div" aria-hidden="true"></span>
+  <div class="grp" role="group" aria-label="Options" id="opts"></div>
+</nav>
+
+<section class="panel" id="panel" aria-labelledby="ptitle" role="dialog">
+  <h2 id="ptitle" tabindex="-1">The rays are learning</h2>
+  <p>Each ray species shares one small habit and improves it by trial and error. Every 1.5 seconds, 16 practice swims in a copy of the lagoon nudge it toward whatever ate more plankton and took fewer stings (evolution strategies). Nothing is pre-trained: reload and they start from scratch. The last column is a fair test: the learned habit and an untrained one swim the same water from the same starts.</p>
+  <div class="rows" id="rows"></div>
+  <div class="foot"><span id="gen">generation 0</span><button type="button" id="restart">Start over</button></div>
+</section>
+
+<div class="show"><button type="button" id="showui">Show controls</button></div>
+<div class="toast" id="toast" role="status"></div>
+<div class="fallback" id="fallback"><p>The lagoon could not start here. It needs WebGL and a network connection for its 3D library. <a href="/">Back to jiajunfan.com</a></p></div>
+
+<script type="module" src="shallows.js" onerror="document.getElementById('fallback').style.display='flex'"></script>
+<script>setTimeout(function () { if (!window.__shallows) document.getElementById('fallback').style.display = 'flex'; }, 12000);</script>
+</body>
+</html>
