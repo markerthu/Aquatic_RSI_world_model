@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ocean Shallows — rays that teach themselves | Jiajun Fan</title>
-<meta name="description" content="A live lagoon where rays improve themselves: they practise in a copy of their world, keep what works, and adapt as you change it.">
+<title>Ocean Shallows — multi-agent self-improvement with a world model | Jiajun Fan</title>
+<meta name="description" content="A live multi-agent lagoon: rays improve themselves by practising in a world model of their water, keep what works, and adapt as you change it.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0f5f7a">
-<meta property="og:title" content="Ocean Shallows — rays that teach themselves">
+<meta property="og:title" content="Ocean Shallows — multi-agent self-improvement with a world model">
 <meta property="og:description" content="Rays practise in a copy of their lagoon, keep what works, and adapt as you change the water.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.jiajunfan.com/lab/shallows/">
@@ -93,6 +93,7 @@
   .gain b{font-weight:inherit}
   .gain .gl{display:none;font-weight:500;color:var(--muted)}
   .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--muted);gap:10px;flex-wrap:wrap}
+  .lede{margin:0 0 8px!important;color:var(--ink)!important}
   .loop{margin:2px 0 10px;padding:0;list-style:none;counter-reset:s;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .loop li{counter-increment:s;font-size:12px;line-height:1.4;color:var(--muted);background:rgba(191,216,236,.28);border-radius:10px;padding:7px 8px}
   .loop li::before{content:counter(s);display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--navy);color:#fff;font-size:10px;font-weight:700;margin-right:5px;vertical-align:1px}
@@ -166,6 +167,7 @@
 
 <section class="panel" id="panel" aria-labelledby="ptitle" role="dialog">
   <h2 id="ptitle" tabindex="-1">How the rays improve themselves</h2>
+  <p class="lede">Many rays, one shared habit per species, all learning at once while they compete for the same plankton.</p>
   <ol class="loop" aria-label="One generation">
     <li><b>Copy</b> the lagoon: a world model with the same water, plankton and nettles</li>
     <li><b>Imagine</b> 16 practice swims per species, each with a slightly changed habit</li>

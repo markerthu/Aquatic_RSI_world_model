@@ -227,7 +227,7 @@ function frame(now) {
     tr.tick(E.t, mobile ? 1.0 : 1.6);
     abTick(mobile ? .5 : .9);
   }
-  for (const ev of E.events) if ((ev.type === 'graze' || ev.type === 'poke') && sound) sound.note(noteI++);
+  for (const ev of E.events) if (sound) { if (ev.type === 'graze') sound.note(noteI++); else if (ev.type === 'poke') sound.creature(ev.c.sp); }
   E.events.length = 0;
   renderer.info.reset();
   packRipples(E);

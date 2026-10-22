@@ -114,7 +114,7 @@ export function createUI(api) {
 
   // learning rows
   const rows = $('rows');
-  rows.innerHTML = '<span class="h"></span><span class="h">Follow the scent</span><span class="h">Steer clear of nettles</span><span class="h hg">Plankton vs untrained</span>';
+  rows.innerHTML = '<span class="h">Ray species</span><span class="h">Follow the scent</span><span class="h">Steer clear of nettles</span><span class="h hg">Plankton vs untrained</span>';
   const R = {};
   for (const k of ['manta', 'eagle', 'sting']) {
     const who = document.createElement('span'); who.className = 'who'; who.textContent = NAMES[k][0];

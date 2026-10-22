@@ -1,7 +1,7 @@
 # Aquatic RSI world model
 
-A small, live lagoon world in the browser where rays learn to forage by trial and error while you watch,
-and where you can change the world under them. It runs publicly as **Ocean Shallows**:
+Multi-agent self-improvement with a world model, in a small live lagoon in the browser: many rays learn to
+forage at once by practising in a copy of their world, while you watch and change the world under them. It runs publicly as **Ocean Shallows**:
 <https://www.jiajunfan.com/lab/shallows/>.
 
 The code in `web/` is the same code the site serves. There is no build step and no server-side part.
@@ -50,7 +50,7 @@ ray species (30 cases), the learned habit ate 1.02 to 1.97 times as much plankto
 
 - Tap the water to scatter plankton; move the pointer across it to stir ripples.
 - Tap a creature to startle it (rays dart away, a resting stingray lifts off the sand, jellies jet away);
-  drag a creature to lead it.
+  with sound on, each species plays the water it moves (none of these animals calls). Drag a creature to lead it.
 - Tap a species in the toolbar to add one, drag its icon onto the water to place it, hold it to remove one.
 - Switch the weather, open the learning panel, turn on sound, hide the controls, pause.
 - Keys: 1-5 add a species (Shift removes), C / R / U / W weather, S sound, L learning panel, H hide, Space pause.
