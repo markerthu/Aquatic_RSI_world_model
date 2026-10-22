@@ -29,7 +29,7 @@ const SEA_LINE = { calm: 'calm water · midday', rain: 'rain · overcast', curre
 const START = mobile ? { manta: 1, eagle: 2, sting: 1, moon: 2, nettle: 1 } : { manta: 2, eagle: 3, sting: 2, moon: 3, nettle: 2 };
 
 let E, tr, water, creatures, cam, shadowRT, unit = 1;
-const AB = {};
+const AB = {}, ABH = { manta: [], eagle: [], sting: [] }; // latest comparison, and its history
 let sound = null, lastTouch = -1e9, touched = false;
 
 function rectToWorld(el, W, H) {
@@ -51,7 +51,7 @@ function build(keep) {
   const counts = keep ? keep.counts : START;
   for (const sp of SPECIES_ORDER) for (let i = 0; i < counts[sp]; i++) addCreature(E, sp, null, null, { free: true, instant: !keep });
   const old = tr;
-  tr = createTrainer(E, { seed: seed ^ 0x9e37, fast: params.has('fast') });
+  tr = createTrainer(E, { seed: seed ^ 0x9e37, fast: params.has('fast'), recSp: 'all' }); // keep each generation's imagined swims
   if (old) { for (const sp of RAYS) Object.assign(tr.S[sp], old.S[sp]); tr.gen = old.gen; } // keep what the rays have learned
   renderer.setSize(w, h, false);
   cam = new THREE.OrthographicCamera(0, W, H, 0, -10, 10);
@@ -62,7 +62,12 @@ function build(keep) {
   if (creatures) creatures.dispose();
   creatures = createCreatures(E);
   abIt = null; // a comparison in progress belongs to the old lagoon
+  ov.width = Math.round(w * dpr); ov.height = Math.round(h * dpr); ovOn = true;
 }
+// The rays' imagined swims: each generation's practice rollouts in the copied lagoon, drawn faintly on the water.
+const ov = document.createElement('canvas'); ov.id = 'imagine'; ov.setAttribute('aria-hidden', 'true');
+canvas.after(ov); const octx = ov.getContext('2d');
+let ovOn = false; const born = {};
 let abIt = null, abLast = -1e9;
 build(null);
 
@@ -85,6 +90,7 @@ function* abRun() {
       }
     }
     AB[sp] = { ratio: a > .05 ? b / a : NaN, n: N, t: E.t };
+    if (a > .05) { ABH[sp].push([tr.gen, b / a]); if (ABH[sp].length > 40) ABH[sp].shift(); }
     yield;
   }
 }
@@ -119,11 +125,12 @@ const api = {
     if (count(E, sp) >= LIMIT[sp]) { ui.toast(`That's plenty of ${ui.NAMES[sp][1]} for one lagoon.`); return; }
     addCreature(E, sp, c.x, c.y); addDrop(E, c.x, c.y, 1.8, .03); settle();
   },
-  startOver() { tr.startOver(); for (const k of Object.keys(AB)) delete AB[k]; abIt = null; abLast = E.t; },
+  startOver() { tr.startOver(); for (const k of Object.keys(AB)) delete AB[k]; for (const k in ABH) ABH[k].length = 0; abIt = null; abLast = E.t; },
   uiHidden(on) { E.uiHidden = on; buildSwim(E); for (const c of [...E.rays, ...E.jellies]) c.sg = E.SG[c.sp]; },
   touched() { if (!touched) { touched = true; ui.hideHint(); } lastTouch = performance.now(); },
+  redraw() { dirty = 1; },
   togglePause() { paused = !paused; dirty = 1; ui.toast(paused ? 'Still. Learning waits until the lagoon moves again.' : 'Moving.'); },
-  state() { return { t: E.t, gen: tr.gen, counts: counts(), sea: E.sea, seaLine: SEA_LINE[E.sea], thetas: tr.thetas(), ab: AB, paused }; },
+  state() { return { t: E.t, gen: tr.gen, counts: counts(), sea: E.sea, seaLine: SEA_LINE[E.sea], thetas: tr.thetas(), ab: AB, abh: ABH, paused }; },
 };
 const ui = createUI(api);
 api.toggleSound = (() => { let pending = null; return () => {
@@ -181,6 +188,25 @@ addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(rebuild, 30
   mq.addEventListener('change', () => { clearTimeout(rz); rz = setTimeout(rebuild, 300); watchDpr(); }, { once: true });
 })();
 
+function drawImagined() {
+  if (!ui.imagining()) { if (ovOn) { octx.setTransform(1, 0, 0, 1, 0, 0); octx.clearRect(0, 0, ov.width, ov.height); ovOn = false; } return; }
+  ovOn = true; octx.setTransform(dpr, 0, 0, dpr, 0, 0); octx.clearRect(0, 0, ov.width / dpr, ov.height / dpr);
+  const now = performance.now();
+  for (const sp of RAYS) {
+    const st = tr.S[sp]; if (!st.tries || !st.rank || !count(E, sp)) continue;
+    if (!born[sp] || born[sp].gen !== st.recGen) born[sp] = { gen: st.recGen, t: now };
+    const fade = paused ? 1 : Math.max(0, 1 - (now - born[sp].t) / 3500), n = st.rank.length, pts = st.tries.length / (2 * n);
+    const order = Array.from({ length: n }, (_, k) => k).sort((a, b) => st.rank[a] - st.rank[b]); // best drawn last, on top
+    for (const k of order) {
+      const q = st.rank[k] + .5, o = k * pts * 2; // q: 0 = worst practice swim, 1 = best
+      octx.beginPath();
+      for (let i = 0; i < pts; i++) { const x = st.tries[o + 2 * i] * unit, y = (E.H - st.tries[o + 2 * i + 1]) * unit; i ? octx.lineTo(x, y) : octx.moveTo(x, y); }
+      octx.strokeStyle = q > .5 ? `rgba(255,255,255,${(.14 + .6 * (q - .5) * 2) * fade})` : `rgba(245,200,181,${.16 * fade})`;
+      octx.lineWidth = q > .95 ? 2.2 : 1.1; octx.stroke();
+    }
+  }
+}
+
 // ---- main loop ----
 let last = performance.now(), acc = 0, due = 0, rafCount = 0, paused = reduced, noteI = 0, dirty = 1, stepN = 0;
 function step(dt) { stepWorld(E, tr.thetas(), dt); if (dt > STEP * 1.5 || (++stepN & 1)) stepRipples(E); }
@@ -209,6 +235,7 @@ function frame(now) {
   creatures.update(E.t);
   renderer.setRenderTarget(shadowRT); renderer.setClearColor(0x000000, 1); renderer.clear(); renderer.render(creatures.shadowScene, cam);
   renderer.setRenderTarget(null); renderer.clear(); water.render(shadowRT); renderer.render(creatures.scene, cam);
+  drawImagined();
   ui.update();
   if (rafCount === 1) document.getElementById('fallback').style.display = 'none'; window.__shallowsReady = true;
 }

@@ -101,6 +101,7 @@ export function createUI(api) {
     if (panel.classList.contains('open') === on) return;
     panel.classList.toggle('open', on); optBtn.learn.setAttribute('aria-expanded', on ? 'true' : 'false');
     if (on) { renderRows(true); if (focus) $('ptitle').focus(); } else if (focus && panel.contains(document.activeElement)) optBtn.learn.focus();
+    api.redraw();
   };
   optBtn.learn.addEventListener('click', () => { setPanel(!panel.classList.contains('open'), true); api.touched(); });
   const setHidden = on => {
@@ -121,7 +122,7 @@ export function createUI(api) {
     const m2 = document.createElement('span'); m2.className = 'meter'; m2.innerHTML = '<i></i>'; m2.setAttribute('role', 'meter');
     m1.setAttribute('aria-label', `${NAMES[k][0]}: follow the scent`); m2.setAttribute('aria-label', `${NAMES[k][0]}: steer clear of nettles`);
     const g = document.createElement('span'); g.className = 'gain'; g.innerHTML = '<b>—</b><span class="gl"> plankton vs untrained</span>';
-    rows.append(who, m1, m2, g); R[k] = { m1, m2, g, gv: g.firstChild };
+    rows.append(who, m1, m2, g); R[k] = { who, m1, m2, g, gv: g.firstChild };
   }
   const setMeter = (m, v) => { // weights live in [-4, 4]; the bar grows from the centre line
     const i = m.firstChild, f = Math.max(-1, Math.min(1, v / 4));
@@ -141,9 +142,31 @@ export function createUI(api) {
       R[k].g.title = okAB ? `In the same water and from the same starts, the learned habit ate ${ab.ratio.toFixed(2)}× the plankton of an untrained ray (${ab.n} paired swims, checked ${Math.max(0, Math.round(s.t - ab.t))} s ago).`
         : !s.counts[k] ? 'Add one to train and compare it.' : ab ? 'Too little plankton near this species to compare. Tap the water to scatter some.' : '';
     }
+    drawTrend(s.abh);
     const rays = s.counts.manta + s.counts.eagle + s.counts.sting;
     $('gen').textContent = `generation ${s.gen}` + (!rays ? ' · paused: no rays in the water' : s.paused ? ' · paused while the lagoon is still' : '');
   }
+  // learned vs untrained over generations: one line per ray species, the dashed line is 'no better'
+  const TREND_C = { manta: '#2F4B8F', eagle: '#6F94C6', sting: '#E39A7A' }, trend = $('trend');
+  function drawTrend(h) {
+    let g1 = 6, lo = .8, hi = 1.6;
+    for (const k in h) for (const [g, r] of h[k]) { g1 = Math.max(g1, g); lo = Math.min(lo, r); hi = Math.max(hi, r); }
+    const W = Math.max(200, Math.round(trend.clientWidth || 320)), H = 78, px = g => 26 + (W - 40) * g / g1, py = r => H - 8 - (H - 16) * (r - lo) / (hi - lo);
+    trend.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    let svg = `<line x1="8" x2="${W - 8}" y1="${py(1).toFixed(1)}" y2="${py(1).toFixed(1)}" stroke="#8F97A8" stroke-dasharray="3 3" stroke-width="1"/>`;
+    svg += `<text x="10" y="${(py(1) - 4).toFixed(1)}" font-size="10" fill="#8F97A8">×1</text>`;
+    for (const k in h) {
+      const pts = h[k]; if (!pts.length) continue;
+      const d = pts.map(([g, r], i) => `${i ? 'L' : 'M'}${px(g).toFixed(1)},${py(r).toFixed(1)}`).join('');
+      const [gl, rl] = pts[pts.length - 1];
+      svg += `<path d="${d}" fill="none" stroke="${TREND_C[k]}" stroke-width="1.8"/>`
+        + `<circle cx="${px(gl).toFixed(1)}" cy="${py(rl).toFixed(1)}" r="2.6" fill="${TREND_C[k]}"/>`;
+    }
+    trend.innerHTML = svg;
+  }
+  for (const k of ['manta', 'eagle', 'sting']) R[k].who.style.boxShadow = `inset 3px 0 0 ${TREND_C[k]}`;
+  const imag = $('imag'); imag.addEventListener('change', () => api.redraw());
+  const imagining = () => panel.classList.contains('open') && imag.checked;
   let lastCensus = '';
   function update() {
     const s = api.state();
@@ -181,5 +204,5 @@ export function createUI(api) {
     requestAnimationFrame(() => el.classList.add('on')); setTimeout(() => el.classList.remove('on'), 1100); setTimeout(() => el.remove(), 1600);
   };
   measure();
-  return { update, hideHint, toast, tag, NAMES };
+  return { update, hideHint, toast, tag, imagining, NAMES };
 }

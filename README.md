@@ -15,7 +15,19 @@ The code in `web/` is the same code the site serves. There is no build step and 
 - **Danger.** Sea nettles sting rays that swim into the zone behind their bells.
 - **Weather.** Calm, rain (blooms come faster and the scent gets noisy), a current, and a whirlpool.
 
-## How the rays learn
+## How the rays improve themselves
+
+Each generation is one loop, and it runs about every 1.5 s of lagoon time:
+
+1. **Copy** the lagoon. The copy is an exact world model: the same water, plankton and nettles.
+2. **Imagine** 16 practice swims per ray species in the copy, each with a slightly changed habit.
+3. **Keep** the changes that ate more plankton and took fewer stings.
+4. **Act** with the new habit in the real lagoon, which keeps changing as you tap and switch the weather.
+
+With the learning panel open, the page draws each generation's imagined swims on the water (brighter = scored
+better) and charts learned vs untrained over generations.
+
+## How the rays learn (details)
 
 Each ray species shares one habit: twelve numbers that map six things a ray senses (scent left vs right, food
 under its mouth, nettles left vs right, the current, the edge of its water, a constant) to how hard it turns

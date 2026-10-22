@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ocean Shallows — a small gym | Jiajun Fan</title>
-<meta name="description" content="A live lagoon where rays learn to forage and jellies drift. Touch the water, change the weather, and watch them adapt.">
+<title>Ocean Shallows — rays that teach themselves | Jiajun Fan</title>
+<meta name="description" content="A live lagoon where rays improve themselves: they practise in a copy of their world, keep what works, and adapt as you change it.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0f5f7a">
-<meta property="og:title" content="Ocean Shallows — a small gym">
-<meta property="og:description" content="A live lagoon where rays learn to forage and jellies drift. Touch the water and watch them adapt.">
+<meta property="og:title" content="Ocean Shallows — rays that teach themselves">
+<meta property="og:description" content="Rays practise in a copy of their lagoon, keep what works, and adapt as you change the water.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.jiajunfan.com/lab/shallows/">
 <meta property="og:image" content="https://www.jiajunfan.com/lab/shallows/og.jpg">
@@ -83,7 +83,7 @@
   .panel p{font-size:13px;line-height:1.5;color:var(--muted);margin:0 0 12px}
   .rows{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px 12px;align-items:center;font-size:12.5px}
   .rows .h{font-size:11px;color:var(--muted);font-weight:600}
-  .rows .who{font-weight:600;white-space:nowrap}
+  .rows .who{font-weight:600;white-space:nowrap;padding-left:9px}
   .meter{height:8px;border-radius:99px;background:#E4E8EF;position:relative;overflow:hidden}
   .meter i{position:absolute;left:50%;top:0;bottom:0;background:var(--navy);border-radius:99px}
   .meter i.neg{background:var(--terra)}
@@ -93,7 +93,16 @@
   .gain b{font-weight:inherit}
   .gain .gl{display:none;font-weight:500;color:var(--muted)}
   .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--muted);gap:10px;flex-wrap:wrap}
+  .loop{margin:2px 0 10px;padding:0;list-style:none;counter-reset:s;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .loop li{counter-increment:s;font-size:12px;line-height:1.4;color:var(--muted);background:rgba(191,216,236,.28);border-radius:10px;padding:7px 8px}
+  .loop li::before{content:counter(s);display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--navy);color:#fff;font-size:10px;font-weight:700;margin-right:5px;vertical-align:1px}
+  .loop b{color:var(--ink);font-weight:700}
+  .trend{margin:12px 0 0}
+  .trend svg{display:block;width:100%;height:78px;background:rgba(191,216,236,.18);border-radius:10px}
+  .trend figcaption{font-size:11.5px;color:var(--muted);margin-top:5px}
+  .imag{display:flex;align-items:center;gap:5px;cursor:pointer}
   .foot button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font:600 12px var(--sans);color:var(--ink);cursor:pointer}
+  #imagine{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
   .tag{position:fixed;z-index:5;transform:translate(-50%,-150%) scale(.92);opacity:0;pointer-events:none;font:600 12.5px var(--sans);color:var(--ink);
     background:var(--paper-solid);border:1px solid var(--line);border-radius:999px;padding:4px 10px;box-shadow:0 6px 18px rgba(10,40,60,.18);
     transition:opacity .25s,transform .25s;white-space:nowrap}
@@ -104,6 +113,7 @@
   .fallback{position:fixed;inset:0;z-index:6;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:24px;
     background:#0f5f7a url(poster.jpg) center/cover no-repeat;color:#fff}
   .fallback p{background:rgba(16,33,43,.6);padding:12px 16px;border-radius:12px;max-width:420px;line-height:1.5}
+  @media (max-width:520px){ .loop{grid-template-columns:1fr 1fr} }
   @media (max-width:860px){
     .head{left:10px;top:10px;padding:7px 11px;gap:9px}
     .title{font-size:18px}
@@ -155,10 +165,18 @@
 </nav>
 
 <section class="panel" id="panel" aria-labelledby="ptitle" role="dialog">
-  <h2 id="ptitle" tabindex="-1">The rays are learning</h2>
-  <p>Each ray species shares one small habit and improves it by trial and error. Every 1.5 seconds, 16 practice swims in a copy of the lagoon nudge it toward whatever ate more plankton and took fewer stings (evolution strategies). Nothing is pre-trained: reload and they start from scratch. The last column is a fair test: the learned habit and an untrained one swim the same water from the same starts.</p>
+  <h2 id="ptitle" tabindex="-1">How the rays improve themselves</h2>
+  <ol class="loop" aria-label="One generation">
+    <li><b>Copy</b> the lagoon: a world model with the same water, plankton and nettles</li>
+    <li><b>Imagine</b> 16 practice swims per species, each with a slightly changed habit</li>
+    <li><b>Keep</b> what ate more plankton and took fewer stings</li>
+    <li><b>Act</b> with the new habit, and repeat every 1.5 s as the lagoon changes</li>
+  </ol>
+  <p>Nothing is pre-trained: reload and they start from zero. The faint lines on the water are the imagined swims; the bright ones scored best.</p>
   <div class="rows" id="rows"></div>
-  <div class="foot"><span id="gen">generation 0</span><button type="button" id="restart">Start over</button></div>
+  <figure class="trend" aria-labelledby="trendcap"><svg id="trend" viewBox="0 0 320 78" role="img" aria-label="Plankton of the learned habit divided by an untrained habit, over generations"></svg>
+    <figcaption id="trendcap">Learned vs untrained over generations (same water, same starts; 1 = no better)</figcaption></figure>
+  <div class="foot"><span id="gen">generation 0</span><label class="imag"><input type="checkbox" id="imag" checked> Show imagined swims</label><button type="button" id="restart">Start over</button></div>
 </section>
 
 <div class="show"><button type="button" id="showui">Show controls</button></div>

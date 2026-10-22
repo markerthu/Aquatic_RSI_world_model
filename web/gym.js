@@ -78,7 +78,7 @@ export function createTrainer(E, o = {}) {
       if (!mem.length) { st.paused = true; continue; }
       st.paused = false;
       const NPk = tr.np, mk = maskOf(sp), ray = makeRay(F, sp, 0, 0, 0), eps = [], R = new Float64Array(2 * NPk), I = new Float64Array(2 * NPk);
-      const rec = tr.recSp === sp ? new Float32Array(2 * NPk * 120) : null, thp = new Float64Array(12), out = [0, 0];
+      const rec = (tr.recSp === sp || tr.recSp === 'all') ? new Float32Array(2 * NPk * 120) : null, thp = new Float64Array(12), out = [0, 0];
       for (let i = 0; i < NPk; i++) {
         const e = new Float64Array(12);
         for (let k = 0; k < 12; k++) e[k] = mk && !mk.includes(k) ? 0 : gauss(rng);
@@ -119,7 +119,7 @@ export function createTrainer(E, o = {}) {
       const val = mi / (2 * NPk) / T * 60;
       st.raw.push(val); st.gens.push(tr.gen);
       st.ema.push(st.ema.length ? st.ema[st.ema.length - 1] + .25 * (val - st.ema[st.ema.length - 1]) : val);
-      if (rec) { st.tries = rec; st.rank = u; }
+      if (rec) { st.tries = rec; st.rank = u; st.recGen = tr.gen; } // the imagined swims of this generation, for drawing
       yield;
     }
     tr.gen++;
