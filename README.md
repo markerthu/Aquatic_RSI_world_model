@@ -8,7 +8,7 @@ The code in `web/` is the same code the site serves. There is no build step and 
 
 [![Ocean Shallows: imagined practice swims drawn over the lagoon](media/preview.gif)](media/ocean_shallows_promo.mp4)
 
-An 8 s loop from a 42 s film recorded from the real simulation (click it, or open [`media/ocean_shallows_promo.mp4`](media/ocean_shallows_promo.mp4)):
+A 6 s loop at 30 fps from a 42 s film recorded from the real simulation (click it, or open [`media/ocean_shallows_promo.mp4`](media/ocean_shallows_promo.mp4)):
 the white loops are one generation's imagined practice swims in the world model, and the badge is the live
 learned-vs-untrained check.
 
