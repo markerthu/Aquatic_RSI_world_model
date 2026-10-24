@@ -120,3 +120,7 @@ learn from zero during it), then films 42 s; captions, title and end cards are p
 | `web/fish.js` | schools of fish: the boids rules, foraging, fleeing, and their instanced drawing |
 | `web/sound.js` | optional surf, rain, notes and per-species touch sounds |
 | `tools/record_video.py` | records the film from the live simulation (see above) |
+
+## License
+
+MIT (see `LICENSE`). Three.js, loaded from jsDelivr at run time, is also MIT-licensed.
