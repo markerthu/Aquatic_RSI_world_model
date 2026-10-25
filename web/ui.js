@@ -229,10 +229,10 @@ export function createUI(api) {
   $('evo').addEventListener('click', () => { setPanel(true, true); api.touched(); });
   $('evo').title = 'Plankton eaten by the learned habit ÷ an untrained one, pooled over the last three checks of every ray species (same water, same starts)';
   // first visit: a short card that says what this is
-  const intro = $('intro'), seen = (() => { try { return localStorage.getItem('shallows-intro') === '1'; } catch (_) { return false; } })();
+  const intro = $('intro'), seen = (() => { try { return localStorage.getItem('aquatic-intro') === '1'; } catch (_) { return false; } })();
   const behind = on => { $('main').inert = barEl.inert = on; };
   const closeIntro = () => {
-    intro.hidden = true; behind(false); try { localStorage.setItem('shallows-intro', '1'); } catch (_) {}
+    intro.hidden = true; behind(false); try { localStorage.setItem('aquatic-intro', '1'); } catch (_) {}
     if (pendingToast) { const m = pendingToast; pendingToast = null; toast(m); }
   };
   if (!seen && !/[?&]nointro/.test(location.search)) { intro.hidden = false; behind(true); setTimeout(() => $('introgo').focus({ preventScroll: true }), 50); }

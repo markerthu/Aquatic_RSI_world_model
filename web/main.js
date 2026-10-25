@@ -1,4 +1,4 @@
-// shallows.js: the page. Builds the lagoon to fit the screen, runs the world at a fixed step, trains the
+// main.js: the page. Builds the lagoon to fit the screen, runs the world at a fixed step, trains the
 // rays in time slices, measures them against an untrained habit, and draws shadows, water and creatures.
 import * as THREE from 'three';
 import { createEnv, addCreature, removeCreature, count, stepWorld, stepRipples, packRipples, addDrop, addJet, userBloom, poke,
@@ -75,6 +75,11 @@ canvas.after(ov); const octx = ov.getContext('2d');
 let ovOn = false; const born = {};
 let abIt = null, abLast = -1e9;
 build(null);
+if (capture) { // a recording rebuilds once the web fonts have set the title and toolbar sizes (they shape the shore), so it is the same every time
+  window.__capReady = false;
+  const faces = () => Promise.all(['500 21px Newsreader', 'italic 500 21px Newsreader', '400 12px Inter', '600 11px Inter', '600 12.5px Inter'].map(f => document.fonts.load(f))).then(() => document.fonts.ready);
+  (document.readyState === 'complete' ? faces() : new Promise(r => addEventListener('load', r, { once: true })).then(faces)).then(() => { build(null); window.__capReady = true; });
+}
 
 // ---- live comparison: learned habit vs untrained habit, same water, same starts, same noise ----
 function* abRun() {
@@ -220,13 +225,14 @@ function step(dt) { stepWorld(E, tr.thetas(), dt); stepFish(fish, E, dt); if (dt
 // While the lagoon is still, a change is stepped in silently (2.5 s of lagoon time) and drawn once, with no animation.
 function settle() { if (!paused) return; for (let i = 0; i < 75; i++) step(1 / 30); E.events.length = 0; dirty = 1; }
 if (reduced) { for (let i = 0; i < 120; i++) step(1 / 30); ui.toast('Motion is reduced, so the lagoon is still. Press Play to let it move.'); } // shown once the intro card is closed
+let capDt = null; // a recording passes its exact step, so the lagoon does not depend on the machine's clock
 function frame(now) {
   if (!capture) requestAnimationFrame(frame);
   if (now < due - 1) return;                      // pace to about 60 fps on fast screens, full rate on 60-75 Hz
   due = Math.max(due + 1000 / 60, now);
   if (paused && !dirty) { last = now; ui.update(); return; } // a still lagoon is drawn only when something changes
   const snap = paused; dirty = 0;
-  let dt = Math.min(.1, (now - last) / 1000); last = now; rafCount++;
+  let dt = capDt ?? Math.min(.1, (now - last) / 1000); last = now; rafCount++; capDt = null;
   if (!paused) {
     acc += dt; let n = 0;
     while (acc >= STEP && n < 6) { step(STEP); acc -= STEP; n++; }
@@ -244,15 +250,15 @@ function frame(now) {
   renderer.setRenderTarget(null); renderer.clear(); water.render(shadowRT); renderer.render(creatures.scene, cam);
   drawImagined();
   ui.update();
-  if (rafCount === 1) document.getElementById('fallback').style.display = 'none'; window.__shallowsReady = true;
+  if (rafCount === 1) document.getElementById('fallback').style.display = 'none'; window.__aquaticReady = true;
 }
 if (!capture) requestAnimationFrame(frame);
 
 // ---- hooks for tests and the curious ----
-window.__shallows = {
-  get E() { return E; }, get tr() { return tr; }, get rafCount() { return rafCount; }, renderer, api, AB,
+window.__aquatic = {
+  get E() { return E; }, get tr() { return tr; }, get F() { return fish; }, get rafCount() { return rafCount; }, renderer, api, AB,
   state: () => api.state(), report: () => tr.report(), setSea: s => api.setSea(s),
-  capStep: dt => { last = performance.now() - dt * 1000; due = 0; frame(performance.now()); tr.tick(E.t, 25); abTick(25); }, // capture only
+  capStep: dt => { capDt = dt; due = 0; frame(performance.now()); tr.tick(E.t, 1e9); abTick(1e9); }, // capture only: each generation and check finishes in its step, so a recording is the same on any machine
   bloomAt: (x, y) => { scareFish(fish, x, y, 1); if (userBloom(E, x, y)) addDrop(E, x, y, 2.4, .05); },
   info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, ...creatures.info() }),
 };

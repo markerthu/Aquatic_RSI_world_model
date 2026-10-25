@@ -1,16 +1,20 @@
-# Aquatic RSI world model
+# Aquatic RSI World Model
 
 Multi-agent self-improvement with a world model, in a small live lagoon in the browser: many rays learn to
-forage at once by practising in a copy of their world, while you watch and change the world under them. It runs publicly as **Ocean Shallows**:
-<https://www.jiajunfan.com/lab/shallows/>.
+forage at once by practising in a copy of their world, while you watch and change the world under them.
+Play it at <https://www.jiajunfan.com/lab/aquatic-rsi-world-model/>.
 
 The code in `web/` is the same code the site serves. There is no build step and no server-side part.
 
-[![Ocean Shallows: imagined practice swims drawn over the lagoon](media/preview.gif)](media/ocean_shallows_promo.mp4)
+[![Aquatic RSI World Model: imagined practice swims drawn over the lagoon](media/preview.gif)](media/aquatic_rsi_film.mp4)
 
-A 6 s loop at 30 fps from a 42 s film recorded from the real simulation (click it, or open [`media/ocean_shallows_promo.mp4`](media/ocean_shallows_promo.mp4)):
-the white loops are one generation's imagined practice swims in the world model, and the badge is the live
-learned-vs-untrained check.
+A 6 s loop at 30 fps from the films below, recorded from the real simulation: the white loops are one
+generation's imagined practice swims in the world model, and the badge is the live learned-vs-untrained check.
+
+- [`media/aquatic_rsi_film.mp4`](media/aquatic_rsi_film.mp4): 60 s in three chapters, many agents, a world model,
+  and self-improvement (habits reset to zero, then 6x speed, with the learned weights, the self-tuned exploration
+  size and the live check drawn from the simulation).
+- [`media/aquatic_rsi_promo.mp4`](media/aquatic_rsi_promo.mp4): 42 s overview.
 
 ## The world
 
@@ -96,16 +100,20 @@ node tests/entering.mjs              # every ray added from the toolbar is in th
 node --import ./tests/no_three.mjs tests/badge_noise.mjs   # how steady the live check is (about 2 min)
 ```
 
-## Record the film
+## Record the films
 
 ```bash
 cd web && python3 -m http.server 8000      # in another terminal
-python3 tools/record_video.py out/         # needs Chrome, ffmpeg and `pip install websocket-client`
+python3 tools/record_video.py out/         # the 42 s film; needs Chrome, ffmpeg and `pip install websocket-client`
+python3 tools/record_film_rsi.py out/      # the 60 s film in three chapters: many agents, a world model, self-improvement
 ```
 
-The page opened with `?capture` stops its own real-time loop, and the script steps the lagoon by exact frames
-and screenshots each one, so the film is smooth on any machine. It warms up for 60 s of lagoon time (the rays
-learn from zero during it), then films 42 s; captions, title and end cards are plain DOM on top of the page.
+The page opened with `?capture` stops its own real-time loop, and the scripts step the lagoon by exact frames
+and screenshot each one, so a film is smooth on any machine. In this mode every generation and every live check
+finishes within its step and the lagoon is built only after the web fonts load, so the same seed always records
+the same film. Both warm up for 60 s of lagoon time (the rays learn from zero during it). The three-chapter film
+draws its labels, the replayed imagined swims and the learning panel from the simulation's own state; in its last
+chapter the habits are reset to zero and the lagoon runs at 6x.
 
 ## Files
 
@@ -113,13 +121,14 @@ learn from zero during it), then films 42 s; captions, title and end cards are p
 | --- | --- |
 | `web/env.js` | the world: depth map, species, plankton and scent, nettles, weather, ripples, one step of every creature |
 | `web/gym.js` | features, the habit, practice swims and the evolution-strategies trainer |
-| `web/shallows.js` | the page: sizing, the main loop, pointer handling, the live learned-vs-untrained check |
+| `web/main.js` | the page: sizing, the main loop, pointer handling, the live learned-vs-untrained check |
 | `web/water.js` | the water shader (sand, depth colour, caustics, ripples, rain, shadows) |
 | `web/creatures.js` | ray and jelly meshes and shaders, tails and tentacles, shadows, picking |
 | `web/ui.js` | toolbar, census, learning panel, hints, keyboard |
 | `web/fish.js` | schools of fish: the boids rules, foraging, fleeing, and their instanced drawing |
 | `web/sound.js` | optional surf, rain, notes and per-species touch sounds |
-| `tools/record_video.py` | records the film from the live simulation (see above) |
+| `tools/record_video.py` | records the 42 s film from the live simulation (see above) |
+| `tools/record_film_rsi.py` | records the 60 s three-chapter film (see above) |
 
 ## License
 

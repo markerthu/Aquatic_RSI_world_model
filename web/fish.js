@@ -124,7 +124,7 @@ const FISH_SHADOW = /* glsl */`
 export function createFishView(F) {
   const geo = new THREE.PlaneGeometry(1, 1, 8, 1);
   const phase = new THREE.InstancedBufferAttribute(new Float32Array(F.n), 1), tint = new THREE.InstancedBufferAttribute(new Float32Array(F.n), 1);
-  for (let i = 0; i < F.n; i++) tint.array[i] = Math.random();
+  for (let i = 0; i < F.n; i++) tint.array[i] = Math.abs(Math.sin(i * 12.9898) * 43758.5453) % 1; // fixed per fish, so a recording repeats exactly
   geo.setAttribute('aPhase', phase); geo.setAttribute('aTint', tint);
   const mat = new THREE.ShaderMaterial({ vertexShader: FISH_VERT, fragmentShader: FISH_FRAG, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide });
   const mesh = new THREE.InstancedMesh(geo, mat, F.n); mesh.frustumCulled = false; mesh.renderOrder = 2;

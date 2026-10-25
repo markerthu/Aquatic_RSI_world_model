@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record the Ocean Shallows promo frame by frame from the real simulation.
+"""Record the Aquatic RSI World Model promo frame by frame from the real simulation.
 
 The page is opened with ?capture, which turns off its real-time loop; this script advances the lagoon by exact
 1/fps steps over the Chrome DevTools protocol and screenshots each frame, so the video is smooth on any machine.
@@ -52,8 +52,8 @@ OVERLAY = r"""
 `;document.head.appendChild(st);
 for(const id of ['vcap','vcard']){const d=document.createElement('div');d.id=id;document.body.appendChild(d)}return 1})()
 """
-TITLE = "<h1>Ocean <i>Shallows</i></h1><p>Agents that teach themselves</p><small>Multi-agent self-improvement with a world model</small>"
-END = "<h1>Ocean <i>Shallows</i></h1><p>jiajunfan.com/lab/shallows</p><small>Jiajun Fan · UIUC</small>"
+TITLE = "<h1>Aquatic RSI <i>World Model</i></h1><p>Agents that teach themselves</p><small>Multi-agent self-improvement with a world model</small>"
+END = "<h1>Aquatic RSI <i>World Model</i></h1><p>jiajunfan.com/lab/aquatic-rsi-world-model</p><small>Jiajun Fan · UIUC</small>"
 # (seconds into the film, action); blooms are at fractions of the lagoon's width and height
 SCRIPT = [
     (0.0, ('card', TITLE)), (3.6, ('card', None)),
@@ -80,7 +80,7 @@ def action(c, act):
     elif kind == 'cap':
         c.eval(f"(()=>{{const k=document.getElementById('vcap');if({json.dumps(bool(act[1]))})k.innerHTML={json.dumps(act[1] or '')};k.style.opacity={1 if act[1] else 0};return 1}})()")
     elif kind == 'bloom':
-        c.eval(f'__shallows.bloomAt(__shallows.E.W*{act[1]}, __shallows.E.H*{act[2]})')
+        c.eval(f'__aquatic.bloomAt(__aquatic.E.W*{act[1]}, __aquatic.E.H*{act[2]})')
     elif kind == 'hl':
         c.eval(f"document.getElementById('evo').classList.toggle('hl',{str(act[1]).lower()});1")
 
@@ -93,7 +93,7 @@ def main():
     a = ap.parse_args()
     frames = os.path.join(a.out, 'frames'); shutil.rmtree(frames, ignore_errors=True); os.makedirs(frames)
     s = socket.socket(); s.bind(('127.0.0.1', 0)); port = s.getsockname()[1]; s.close()
-    prof = tempfile.mkdtemp(prefix='shallows_rec_')
+    prof = tempfile.mkdtemp(prefix='aquatic_rec_')
     proc = subprocess.Popen([CHROME, '--headless=new', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--hide-scrollbars',
                              '--no-first-run', f'--remote-debugging-port={port}', f'--user-data-dir={prof}', 'about:blank'],
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -105,13 +105,13 @@ def main():
         c.call('Page.enable'); c.call('Runtime.enable')
         c.call('Emulation.setDeviceMetricsOverride', width=a.w, height=a.h, deviceScaleFactor=1, mobile=False)
         c.call('Page.navigate', url=f'{a.url}?seed={a.seed}&nointro&capture')
-        for _ in range(100):
-            if c.eval('!!window.__shallows'): break
+        for _ in range(300):
+            if c.eval('window.__capReady === true'): break   # the page rebuilds once its fonts are in
             time.sleep(.1)
         c.eval(OVERLAY)
         c.eval("document.getElementById('imag').checked=false;1")   # the film shows the imagined swims only in their scene
         dt = 1 / a.fps
-        for _ in range(int(a.warm * a.fps)): c.eval(f'__shallows.capStep({dt})')
+        for _ in range(int(a.warm * a.fps)): c.eval(f'__aquatic.capStep({dt})')
         print('warmed up:', c.eval("document.getElementById('evotxt').textContent"), flush=True)
         si, n = 0, int(DUR * a.fps)
         for f in range(n):
@@ -119,14 +119,14 @@ def main():
             while si < len(SCRIPT) and SCRIPT[si][0] <= t + 1e-9: action(c, SCRIPT[si][1]); si += 1
             ramp = min(1, (t - IMAGINE[0]) / .6, (IMAGINE[1] - t) / .6)
             c.eval(f'window.__showImagined={str(ramp > 0).lower()};window.__imagBoost={max(.02, 2.2 * ramp):.3f};1')
-            c.eval(f'__shallows.capStep({dt})')
+            c.eval(f'__aquatic.capStep({dt})')
             c.eval(STEP_ANIMS % (1000 * dt))
             img = c.call('Page.captureScreenshot', format='jpeg', quality=92)
             open(os.path.join(frames, f'{f:05d}.jpg'), 'wb').write(base64.b64decode(img['data']))
         print('end:', c.eval("document.getElementById('evotxt').textContent"), flush=True)
     finally:
         proc.kill(); shutil.rmtree(prof, ignore_errors=True)
-    out = os.path.join(a.out, 'ocean_shallows_promo.mp4')
+    out = os.path.join(a.out, 'aquatic_rsi_promo.mp4')
     # JPEG frames are full-range BT.601; convert to the limited-range BT.709 that players and social sites expect
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-framerate', str(a.fps), '-i', os.path.join(frames, '%05d.jpg'),
                     '-vf', 'colorspace=ispace=bt470bg:iprimaries=bt709:itrc=bt709:irange=pc:space=bt709:primaries=bt709:trc=bt709:range=tv:format=yuv420p',
