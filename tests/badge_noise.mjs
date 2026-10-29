@@ -7,7 +7,7 @@ const env = await import(R + 'env.js'), gym = await import(R + 'gym.js'), fishm 
 const NL = +process.argv[2] || 24, TEND = +process.argv[3] || 240, TAU = Math.PI * 2;
 const CFG = { W: 16, H: 10, title: { l: .178, r: 3.569, t: 9.844, b: 9.211 }, tray: { l: 7.733, r: 8.267, t: .467, b: .178 } };
 const START = { manta: 2, eagle: 3, sting: 2, moon: 3, nettle: 2 };
-function check(E, tr, N) { // the page's abRun (shallows.js), run to completion
+function check(E, tr, N) { // the page's abRun (web/main.js), run to completion
   const F = env.forkEnv(E), food0 = Float32Array.from(F.food), t0 = F.t, th0 = new Float64Array(12), out = [0, 0];
   let A = 0, B = 0;
   for (const sp of env.RAYS) {

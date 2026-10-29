@@ -100,6 +100,8 @@ node tests/entering.mjs              # every ray added from the toolbar is in th
 node --import ./tests/no_three.mjs tests/badge_noise.mjs   # how steady the live check is (about 2 min)
 ```
 
+The tests need Node 20.6 or newer (`badge_noise.mjs` uses `node --import` and `module.register`).
+
 ## Record the films
 
 ```bash
@@ -107,6 +109,9 @@ cd web && python3 -m http.server 8000      # in another terminal
 python3 tools/record_video.py out/         # the 42 s film; needs Chrome, ffmpeg and `pip install websocket-client`
 python3 tools/record_film_rsi.py out/      # the 60 s film in three chapters: many agents, a world model, self-improvement
 ```
+
+The recorders are set up for macOS: Chrome at its default macOS path and the Metal GPU flag (`--use-angle=metal`).
+On other systems set `CHROME=/path/to/chrome` and remove that flag from the script.
 
 The page opened with `?capture` stops its own real-time loop, and the scripts step the lagoon by exact frames
 and screenshot each one, so a film is smooth on any machine. In this mode every generation and every live check

@@ -1,19 +1,19 @@
 // Acceptance: for env seeds, train 60 generations (about 90 s of lagoon time) then compare learned vs untrained
-// in the same frozen lagoon from the same starts and noise. Reports plankton ratio and stings per swim.
+// in the same frozen lagoon from the same starts and noise. Reports plankton ratio and the per-swim penalty (stings, swimming effort, edge).
 // usage: node tests/learning.mjs SEED TAP_EVERY_S [fixed]   ('fixed' turns off the self-tuned exploration size)
 const R = new URL('../web/', import.meta.url).href;
 const env = await import(R + 'env.js'), gym = await import(R + 'gym.js');
 const eseed = +process.argv[2], tap = +process.argv[3], adapt = process.argv[4] !== 'fixed';
 function evalTheta(E, sp, th, seeds) {
-  let eat = 0, stung = 0; const F = env.forkEnv(E), food0 = Float32Array.from(F.food), ray = env.makeRay(F, sp, 0, 0, 0), out = [0, 0];
+  let eat = 0, cost = 0; const F = env.forkEnv(E), food0 = Float32Array.from(F.food), ray = env.makeRay(F, sp, 0, 0, 0), out = [0, 0];
   const mem = E.rays.filter(r => r.sp === sp);
   for (const sd of seeds) {
     const m = mem[sd % mem.length]; F.food.set(food0); F.t = E.t; for (let q = 0; q < F.nettles.length; q++) Object.assign(F.nettles[q], F.nettles0[q]);
     Object.assign(ray, { x: m.x, y: m.y, h: (sd * 1.7) % 6.28, v: .65 * ray.P.V, turn: 0, xi: 0, flinch: 0, rest: 0, somer: -1, lead: null, entering: false, leaving: false });
     const it = gym.rollout(F, ray, th, 1000 + sd, 480, 1 / 20, null, out); while (!it.next().done);
-    eat += out[1]; stung += out[1] - out[0];
+    eat += out[1]; cost += out[1] - out[0];
   }
-  return [eat / seeds.length, stung / seeds.length];
+  return [eat / seeds.length, cost / seeds.length];
 }
 const E = env.createEnv({ W: 16, H: 10, title: { l: .2, r: 4.2, t: 9.85, b: 7.1 }, tray: { l: 3.45, r: 12.55, t: 2.05, b: .22 }, seed: eseed });
 E.nextBloom = 0;
